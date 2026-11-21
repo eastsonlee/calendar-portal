@@ -10,6 +10,8 @@
     <meta name="twitter:title" content="Calendar" />
     <meta name="application-name" content="Calendar" />
     <meta name="apple-mobile-web-app-title" content="Calendar" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
     <script>document.title = "Calendar";</script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -76,7 +78,7 @@
       .top-controls{
         position:fixed;
         top:14px;
-        right:14px;
+        left:14px;
         z-index:100;
         display:flex;
         gap:8px;
@@ -130,9 +132,9 @@
         bottom:22px;
         transform:translateX(-50%) translateY(8px);
         z-index:120;
-        max-width:min(92vw,520px);
+        max-width:min(92vw,560px);
         padding:9px 16px;
-        border-radius:999px;
+        border-radius:18px;
         background:rgba(18,10,4,.88);
         color:#fdf6e9;
         font-size:13px;
@@ -143,8 +145,13 @@
         opacity:0;
         pointer-events:none;
         transition:opacity .25s ease, transform .25s ease;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        gap:10px;
+        flex-wrap:wrap;
       }
-      .fs-toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+      .fs-toast.show{ opacity:1; transform:translateX(-50%) translateY(0); pointer-events:auto; }
       /* True fullscreen (browser granted it): stretch edge to edge. */
       :root:fullscreen .page{ max-width:none; padding:0; height:100dvh; }
       :root:fullscreen .sheet{ border:none; box-shadow:none; }
@@ -165,7 +172,7 @@
       :root.pseudo-fs .sheet{ border:none; box-shadow:none; }
       :root.pseudo-fs body{ overflow:hidden; }
       @media (max-width:560px){
-        .top-controls{ top:10px; right:10px; }
+        .top-controls{ top:10px; left:10px; }
         .theme-toggle{ min-height:38px; padding:7px 12px; font-size:13px; }
         .fs-toggle{ width:38px; min-height:38px; }
       }
@@ -215,7 +222,6 @@
       .photo{
         position:relative;
         overflow:hidden;
-        border-radius:10px;
         min-height:0;
         background:#3a3128;
       }
@@ -256,7 +262,7 @@
       .photo-swap:focus-visible{ outline:2px solid #fdf6e9; outline-offset:2px; }
       .photo-swap svg{ width:18px; height:18px; display:block; }
       @media (max-width:560px){
-        .photo-nav{ top:56px; right:10px; }
+        .photo-nav{ top:12px; right:10px; }
         .photo-swap{ width:36px; height:36px; min-height:36px; }
       }
       .photo .scrim{
@@ -313,9 +319,6 @@
       /* ---------- month calendar ---------- */
       .month{
         background:var(--cal-bg);
-        border-radius:10px;
-        overflow:hidden;
-        margin-left:12px;
         display:flex;
         flex-direction:column;
         min-width:0;
@@ -368,6 +371,7 @@
       .week-head, .grid{ display:grid; grid-template-columns:repeat(7,1fr); }
       .week-head{
         padding:2px 6px 1px;
+        column-gap:2px;
         border-bottom:1px solid var(--line);
       }
       .week-head span{
@@ -384,10 +388,10 @@
       .grid{ flex:1; min-height:0; padding:2px 6px 4px; gap:2px; grid-template-rows:repeat(6,minmax(0,1fr)); }
       .cell{
         border-radius:8px;
-        padding:2px 3px 1px 6px;
+        padding:2px 3px 1px;
         display:flex;
         flex-direction:column;
-        align-items:flex-start;
+        align-items:center;
         min-height:0;
         min-width:0;
       }
@@ -409,7 +413,7 @@
         overflow-wrap:anywhere;
         max-width:100%;
         width:100%;
-        text-align:left;
+        text-align:center;
       }
       .cell .fest.cn{ color:var(--cn); }
       .cell .fest.us{ font-family:var(--font-num); font-weight:700; color:var(--us); white-space:nowrap; font-size:clamp(10px,.78vw,12.5px); letter-spacing:-.02em; }
@@ -421,7 +425,7 @@
         line-height:1.12;
         white-space:nowrap;
         margin-top:2px;
-        text-align:left;
+        text-align:center;
       }
       .grid.rows-6 .cell .num{ font-size:clamp(26px,min(2.4vw,3.5vh),38px); }
       .grid.rows-6 .cell{ padding-top:1px; padding-bottom:0; }
@@ -505,9 +509,6 @@
       .mini td i.dot.cn{ background:var(--cn); }
       .mini td i.dot.us{ background:var(--us); }
       /* ---------- responsive ---------- */
-      @media (min-width:821px){
-        .month-head{ padding-right:164px; }
-      }
       @media (max-width:1100px){
         .minis{ grid-template-columns:repeat(3,1fr); grid-template-rows:none; flex:none; }
         .page{ height:auto; min-height:100dvh; }
@@ -517,7 +518,7 @@
         .page{ min-height:0; }
         .top{ grid-template-columns:1fr; flex:none; }
         .photo{ min-height:250px; aspect-ratio:16/10; }
-        .month{ min-height:430px; margin-left:0; margin-top:12px; }
+        .month{ min-height:430px; }
         .grid{ min-height:340px; }
       }
       @media (max-width:560px){
@@ -554,7 +555,7 @@
         <span id="themeToggleLabel">浅色</span>
       </button>
     </div>
-    <div class="fs-toast" id="fsToast" role="status" aria-live="polite"></div>
+    <div class="fs-toast" id="fsToast" role="status" aria-live="polite"><span id="fsToastText"></span></div>
     <div class="page">
       <div class="sheet">
         <div class="binding" aria-hidden="true"></div>
@@ -648,50 +649,96 @@
         });
       }
       /* ---------- fullscreen toggle ----------
-         Why the old button "did nothing" on Portal, and why movies
-         there CAN go fullscreen while this page could not:
+         Why movies / YouTube CAN go fullscreen on Portal while
+         this page, embedded there, cannot — and what this button
+         does about it:
 
-         - A movie's fullscreen button is the player/browser's own:
-           the browser hands the <video> element to its native media
-           layer (on WebKit, video.webkitEnterFullscreen(); on Portal,
-           the device video pipeline). Media fullscreen is granted to
-           embedded content without any iframe delegation.
+         - Video fullscreen is a media privilege: the browser
+           hands the <video> element to its native player layer,
+           and embedded content gets it without asking any iframe.
+           YouTube is additionally opened as a TOP-LEVEL page
+           there, and a top-level document's fullscreen is always
+           allowed.
          - A web page's fullscreen is a document privilege:
-           documentElement.requestFullscreen() only succeeds when
-           every ancestor iframe delegates the fullscreen permission
-           (allow="fullscreen" / allowfullscreen). The artifact shell
-           and Portal embed this page in an iframe WITHOUT that
-           delegation, so the call returns a promise that rejects
-           (NotAllowedError). The old handler never caught the
-           rejection and re-synced the icon synchronously, before the
-           async request settled — so the click produced no error, no
-           fullscreen and no icon change: literally no reaction.
-
-         Fix: try the real API first, with all vendor prefixes
-         (WebKit on Portal/Safari uses webkitRequestFullscreen,
-         which the old code never tried), catch rejection and the
-         fullscreenerror event, and when the host container refuses
-         — the normal case inside Portal — fall back to an in-page
-         fill mode that stretches the calendar over the whole
-         viewport the page controls. On a plain browser tab, where
-         document fullscreen is allowed, the native path is used. */
+           requestFullscreen() only succeeds when every ancestor
+           iframe delegates it (allow="fullscreen"). The artifact
+           shell and Portal embed this page WITHOUT that
+           delegation, so the request rejects. Round 1 fixed the
+           original "no reaction" bug (unhandled rejection, icon
+           synced before the async request settled) by trying
+           every vendor-prefixed variant and falling back to an
+           in-page fill mode.
+         - Round 2/3 tried to hide the browser tab strip that
+           fill mode cannot cover: escalate the request to the
+           top document when same-origin reachable, and offer an
+           "open standalone" toast action that opened this page's
+           own URL in a new tab. The user's photo (2026-11-20)
+           proved that action broken: inside the frame,
+           location.href is a signed gateway content URL
+           (….cf.metaausercontent.com/index.html) that answers
+           "unauthorized" when opened as a top-level tab. The
+           shell owns the page's real address; a framed page
+           cannot mint a standalone link to itself. Round 4
+           removes the standalone action entirely — a button
+           that lands the user on an "unauthorized" page is
+           worse than no button.
+         - What remains is what genuinely works: try the real
+           API on the top document (same-origin only), then this
+           document, then <body>. On any top-level opening of
+           the calendar (a plain browser tab) the first attempts
+           succeed and the tab strip hides, exactly like
+           YouTube. When the host frame refuses every attempt,
+           fill mode stretches the calendar over all the space
+           the page controls, and the toast says plainly why the
+           tab strip above it stays: it is the browser's own UI,
+           outside the frame, and no code inside the frame can
+           hide it. */
       var fsToggle=document.getElementById("fsToggle");
       var fsToast=document.getElementById("fsToast");
+      var fsToastText=document.getElementById("fsToastText");
       var pseudoFs=false;
+      var fsRequesting=false;
       var fsPendingTimer=null;
       var fsToastTimer=null;
       function nativeFsElement(){
         return document.fullscreenElement||document.webkitFullscreenElement||document.mozFullScreenElement||document.msFullscreenElement||null;
       }
-      function showFsToast(msg){
+      /* The outermost document, but only when it is same-origin
+         reachable; cross-origin access throws and is caught. */
+      function topDoc(){
+        try{
+          if(window.top&&window.top!==window){
+            var d=window.top.document;
+            if(d) return d;
+          }
+        }catch(e){ /* cross-origin frame: no access */ }
+        return null;
+      }
+      function anyFsElement(){
+        var el=nativeFsElement();
+        if(el) return el;
+        var td=topDoc();
+        if(td){
+          try{ return td.fullscreenElement||td.webkitFullscreenElement||null; }
+          catch(e){ /* ignore */ }
+        }
+        return null;
+      }
+      function showFsToast(msg,ms){
         if(!fsToast) return;
-        fsToast.textContent=msg;
+        if(fsToastText) fsToastText.textContent=msg;
+        else fsToast.textContent=msg;
         fsToast.classList.add("show");
         if(fsToastTimer) clearTimeout(fsToastTimer);
-        fsToastTimer=setTimeout(function(){ fsToast.classList.remove("show"); },4200);
+        fsToastTimer=setTimeout(function(){ fsToast.classList.remove("show"); },ms||4200);
+      }
+      function hideFsToast(){
+        if(!fsToast) return;
+        fsToast.classList.remove("show");
+        if(fsToastTimer){ clearTimeout(fsToastTimer); fsToastTimer=null; }
       }
       function syncFsToggle(){
-        var isFs=!!nativeFsElement()||pseudoFs;
+        var isFs=!!anyFsElement()||pseudoFs;
         if(!fsToggle) return;
         fsToggle.classList.toggle("is-fs", isFs);
         fsToggle.setAttribute("aria-pressed", isFs?"true":"false");
@@ -702,57 +749,107 @@
         pseudoFs=true;
         document.documentElement.classList.add("pseudo-fs");
         syncFsToggle();
-        if(!silent) showFsToast("已铺满整个窗口显示；系统全屏被 Portal 容器拦住了，再点一次按钮退出");
+        if(silent) return;
+        if(window.top!==window){
+          /* Framed: the tab strip above belongs to the browser /
+             host page and cannot be hidden from inside the frame.
+             Say so plainly, and name the route that does work:
+             open the calendar as a top-level page (the way
+             YouTube is opened) and the same button gives true
+             fullscreen there. */
+          showFsToast("已铺满窗口。最上面那条标签栏是浏览器自己的，日历嵌在外层页面的框架里，从里面藏不掉。想像 YouTube 那样真全屏：在浏览器里把日历作为独立页面打开（顶层打开），再点全屏按钮即可。再点一次按钮退出铺满。",13000);
+        }else{
+          showFsToast("已铺满窗口显示。浏览器这次没有允许真全屏；在电脑浏览器里按 F11 也可完全去掉边框。再点一次按钮退出铺满。",7000);
+        }
       }
       function exitPseudoFs(){
         pseudoFs=false;
         document.documentElement.classList.remove("pseudo-fs");
         syncFsToggle();
       }
+      function callFsRequest(el){
+        /* Returns the request promise, undefined when this element
+           has no fullscreen API at all; throws are left to caller. */
+        if(el.requestFullscreen){
+          try{ return el.requestFullscreen({navigationUI:"hide"}); }
+          catch(optErr){ return el.requestFullscreen(); }
+        }else if(el.webkitRequestFullscreen){
+          return el.webkitRequestFullscreen();
+        }else if(el.webkitRequestFullScreen){
+          return el.webkitRequestFullScreen();
+        }else if(el.mozRequestFullScreen){
+          return el.mozRequestFullScreen();
+        }else if(el.msRequestFullscreen){
+          return el.msRequestFullscreen();
+        }
+        return undefined;
+      }
       function requestNativeFs(){
-        var root=document.documentElement;
+        if(fsRequesting) return;
+        fsRequesting=true;
         var done=false;
+        function succeed(){
+          if(done) return;
+          done=true;
+          fsRequesting=false;
+          if(fsPendingTimer){ clearTimeout(fsPendingTimer); fsPendingTimer=null; }
+          if(pseudoFs) exitPseudoFs();
+          hideFsToast();
+          syncFsToggle();
+        }
         function fail(){
           if(done) return;
           done=true;
+          fsRequesting=false;
           if(fsPendingTimer){ clearTimeout(fsPendingTimer); fsPendingTimer=null; }
-          if(!nativeFsElement()&&!pseudoFs) enterPseudoFs(false);
+          if(!anyFsElement()&&!pseudoFs) enterPseudoFs(false);
         }
-        try{
-          var p=null;
-          if(root.requestFullscreen){
-            try{ p=root.requestFullscreen({navigationUI:"hide"}); }
-            catch(optErr){ p=root.requestFullscreen(); }
-          }else if(root.webkitRequestFullscreen){
-            p=root.webkitRequestFullscreen();
-          }else if(root.webkitRequestFullScreen){
-            p=root.webkitRequestFullScreen();
-          }else if(root.mozRequestFullScreen){
-            p=root.mozRequestFullScreen();
-          }else if(root.msRequestFullscreen){
-            p=root.msRequestFullscreen();
-          }else{
-            fail();
-            return;
-          }
-          if(p&&typeof p.catch==="function"){
-            p.then(function(){
-              if(fsPendingTimer){ clearTimeout(fsPendingTimer); fsPendingTimer=null; }
-              syncFsToggle();
-            },fail);
-          }
-          /* Older WebKit returns no promise: if no fullscreenchange
-             arrives shortly, the request was refused — fall back. */
-          if(fsPendingTimer) clearTimeout(fsPendingTimer);
-          fsPendingTimer=setTimeout(function(){
-            fsPendingTimer=null;
-            if(!nativeFsElement()&&!pseudoFs) fail();
-          },400);
-        }catch(e){
-          fail();
+        /* Escalation order: the top document's element first —
+           when reachable it is the only request that also hides
+           the browser tab strip and the host page's header — then
+           this document's element, then <body>. A rejection moves
+           on to the next candidate instead of giving up. */
+        var candidates=[];
+        var td=topDoc();
+        if(td&&td.documentElement) candidates.push(td.documentElement);
+        candidates.push(document.documentElement);
+        if(document.body) candidates.push(document.body);
+        var idx=0;
+        function next(){
+          if(done) return;
+          if(anyFsElement()){ succeed(); return; }
+          if(idx>=candidates.length){ fail(); return; }
+          var el=candidates[idx++];
+          var p;
+          try{ p=callFsRequest(el); }
+          catch(e){ next(); return; }
+          if(p===undefined){ next(); return; }
+          if(p&&typeof p.then==="function"){ p.then(succeed,next); }
+          /* No promise (older WebKit): the pending timer and the
+             fullscreenchange listeners settle the outcome. */
         }
+        next();
+        /* Safety net for non-promise engines: if no fullscreen
+           element shows up shortly, every attempt was refused. */
+        if(fsPendingTimer) clearTimeout(fsPendingTimer);
+        fsPendingTimer=setTimeout(function(){
+          fsPendingTimer=null;
+          if(done) return;
+          if(anyFsElement()) succeed();
+          else if(idx>=candidates.length) fail();
+        },800);
       }
       function exitNativeFs(){
+        /* Exit on whichever document actually holds fullscreen —
+           the top document when the escalated request landed there,
+           otherwise this one. */
+        var td=topDoc();
+        try{
+          if(td&&(td.fullscreenElement||td.webkitFullscreenElement)){
+            if(td.exitFullscreen){ td.exitFullscreen(); return; }
+            if(td.webkitExitFullscreen){ td.webkitExitFullscreen(); return; }
+          }
+        }catch(e){ /* fall through to own document */ }
         try{
           if(document.exitFullscreen) document.exitFullscreen();
           else if(document.webkitExitFullscreen) document.webkitExitFullscreen();
@@ -762,27 +859,36 @@
       }
       if(fsToggle){
         fsToggle.addEventListener("click",function(){
-          if(nativeFsElement()){ exitNativeFs(); }
+          if(anyFsElement()){ exitNativeFs(); }
           else if(pseudoFs){ exitPseudoFs(); }
           else{ requestNativeFs(); }
         });
-        document.addEventListener("fullscreenchange",function(){
+        function onFsChange(){
+          fsRequesting=false;
           if(fsPendingTimer){ clearTimeout(fsPendingTimer); fsPendingTimer=null; }
-          if(nativeFsElement()&&pseudoFs) exitPseudoFs();
+          if(anyFsElement()&&pseudoFs) exitPseudoFs();
+          if(anyFsElement()) hideFsToast();
           syncFsToggle();
-        });
-        document.addEventListener("webkitfullscreenchange",function(){
-          if(fsPendingTimer){ clearTimeout(fsPendingTimer); fsPendingTimer=null; }
-          if(nativeFsElement()&&pseudoFs) exitPseudoFs();
-          syncFsToggle();
-        });
+        }
+        document.addEventListener("fullscreenchange",onFsChange);
+        document.addEventListener("webkitfullscreenchange",onFsChange);
         document.addEventListener("mozfullscreenchange",syncFsToggle);
         document.addEventListener("MSFullscreenChange",syncFsToggle);
+        /* When the top document holds fullscreen, its change
+           events fire there, not here — listen on it too so the
+           icon re-syncs when the user leaves via Esc. */
+        var fsTopDoc=topDoc();
+        if(fsTopDoc){
+          try{
+            fsTopDoc.addEventListener("fullscreenchange",onFsChange);
+            fsTopDoc.addEventListener("webkitfullscreenchange",onFsChange);
+          }catch(e){ /* not reachable after all */ }
+        }
         document.addEventListener("fullscreenerror",function(){
-          if(!nativeFsElement()&&!pseudoFs) enterPseudoFs(false);
+          if(!anyFsElement()&&!pseudoFs) enterPseudoFs(false);
         });
         document.addEventListener("webkitfullscreenerror",function(){
-          if(!nativeFsElement()&&!pseudoFs) enterPseudoFs(false);
+          if(!anyFsElement()&&!pseudoFs) enterPseudoFs(false);
         });
         document.addEventListener("keydown",function(e){
           if(e.key==="Escape"&&pseudoFs){ exitPseudoFs(); }
