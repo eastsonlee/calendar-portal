@@ -1,0 +1,1586 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="dark" id="colorSchemeMeta" />
+    <link rel="icon" href="data:," />
+    <title>Calendar</title>
+    <meta property="og:title" content="Calendar" />
+    <meta name="twitter:title" content="Calendar" />
+    <meta name="application-name" content="Calendar" />
+    <meta name="apple-mobile-web-app-title" content="Calendar" />
+    <script>document.title = "Calendar";</script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@700&family=Noto+Sans+SC:wght@400;500;700;900&family=Noto+Serif+SC:wght@600;900&display=swap" rel="stylesheet" />
+    <style>
+      :root{
+        --paper:#e6dcc4;
+        --sheet:#f2e9d5;
+        --cal-bg:#e9dec6;
+        --year-bg:#ede4cb;
+        --ink:#211609;
+        --ink-soft:#3d2f1e;
+        --ink-faint:#5b4832;
+        --line:#c6b28c;
+        --line-soft:#d5c4a0;
+        --band:#865736;
+        --band-deep:#6f4630;
+        --sun:#c05a44;
+        --sat:#5f87ad;
+        --cn:#b94a38;
+        --us:#5f87ad;
+        --term:#4c6a3a;
+        --lunar:#6b5844;
+        --today-bg:#f0c987;
+        --today-ink:#2e1c0d;
+        --hover:#dcc79e;
+        --shadow:0 18px 50px rgba(59,42,25,.22);
+        --font-num:"Inter","Noto Sans SC",system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+      }
+      :root[data-theme="dark"]{
+          --paper:#201913;
+          --sheet:#2c2318;
+          --cal-bg:#382c1e;
+          --ink:#fdf3e0;
+          --ink-soft:#e6d7bc;
+          --ink-faint:#c2ae90;
+          --line:#5d4c38;
+          --line-soft:#4a3c2c;
+          --band:#6d4830;
+          --band-deep:#573a26;
+          --sun:#efa08d;
+          --sat:#93b8d6;
+          --cn:#efa08d;
+          --us:#93b8d6;
+          --term:#bcd6a2;
+          --lunar:#d9cbae;
+          --today-bg:#eebd7d;
+          --today-ink:#2e1a09;
+          --year-bg:#423625;
+          --hover:#4a3a28;
+          --shadow:0 18px 50px rgba(0,0,0,.55);
+      }
+      *{ box-sizing:border-box; }
+      html,body{ height:100%; }
+      body{
+        margin:0;
+        background:var(--paper);
+        color:var(--ink);
+        font-family:"Noto Sans SC",system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+        -webkit-font-smoothing:antialiased;
+      }
+      button{ font-family:inherit; cursor:pointer; }
+      button, [role="button"], select, summary, input:not([type="checkbox"],[type="radio"]){ min-height:2rem; }
+      .top-controls{
+        position:fixed;
+        top:14px;
+        right:14px;
+        z-index:100;
+        display:flex;
+        gap:8px;
+        align-items:center;
+      }
+      .theme-toggle{
+        display:inline-flex;
+        align-items:center;
+        gap:7px;
+        min-height:40px;
+        padding:8px 14px;
+        border-radius:999px;
+        border:1px solid var(--line);
+        background:var(--sheet);
+        color:var(--ink);
+        box-shadow:0 6px 20px rgba(59,42,25,.18);
+        font-size:13.5px;
+        font-weight:700;
+        letter-spacing:.04em;
+        line-height:1;
+      }
+      .theme-toggle:hover{ background:var(--hover); }
+      .theme-toggle:focus-visible{ outline:2px solid var(--band); outline-offset:2px; }
+      .theme-toggle .theme-icon{ width:17px; height:17px; flex:none; display:block; }
+      .theme-toggle .icon-sun{ display:none; }
+      :root[data-theme="dark"] .theme-toggle .icon-sun{ display:block; }
+      :root[data-theme="dark"] .theme-toggle .icon-moon{ display:none; }
+      .fs-toggle{
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+        width:40px;
+        min-height:40px;
+        padding:0;
+        border-radius:999px;
+        border:1px solid var(--line);
+        background:var(--sheet);
+        color:var(--ink);
+        box-shadow:0 6px 20px rgba(59,42,25,.18);
+        line-height:1;
+      }
+      .fs-toggle:hover{ background:var(--hover); }
+      .fs-toggle:focus-visible{ outline:2px solid var(--band); outline-offset:2px; }
+      .fs-toggle .fs-icon{ width:17px; height:17px; flex:none; display:block; }
+      .fs-toggle .icon-compress{ display:none; }
+      .fs-toggle.is-fs .icon-expand{ display:none; }
+      .fs-toggle.is-fs .icon-compress{ display:block; }
+      .fs-toast{
+        position:fixed;
+        left:50%;
+        bottom:22px;
+        transform:translateX(-50%) translateY(8px);
+        z-index:120;
+        max-width:min(92vw,520px);
+        padding:9px 16px;
+        border-radius:999px;
+        background:rgba(18,10,4,.88);
+        color:#fdf6e9;
+        font-size:13px;
+        font-weight:600;
+        line-height:1.45;
+        text-align:center;
+        box-shadow:0 10px 30px rgba(0,0,0,.35);
+        opacity:0;
+        pointer-events:none;
+        transition:opacity .25s ease, transform .25s ease;
+      }
+      .fs-toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+      /* True fullscreen (browser granted it): stretch edge to edge. */
+      :root:fullscreen .page{ max-width:none; padding:0; height:100dvh; }
+      :root:fullscreen .sheet{ border:none; box-shadow:none; }
+      :root:-webkit-full-screen .page{ max-width:none; padding:0; height:100dvh; }
+      :root:-webkit-full-screen .sheet{ border:none; box-shadow:none; }
+      /* In-page fill mode: fallback when the host container (Portal /
+         artifact iframe without allowfullscreen) refuses document
+         fullscreen. The calendar takes over the whole viewport the
+         page is allowed to paint in. */
+      :root.pseudo-fs .page{
+        position:fixed; inset:0;
+        max-width:none; width:100%;
+        height:100dvh;
+        padding:0;
+        z-index:50;
+        background:var(--paper);
+      }
+      :root.pseudo-fs .sheet{ border:none; box-shadow:none; }
+      :root.pseudo-fs body{ overflow:hidden; }
+      @media (max-width:560px){
+        .top-controls{ top:10px; right:10px; }
+        .theme-toggle{ min-height:38px; padding:7px 12px; font-size:13px; }
+        .fs-toggle{ width:38px; min-height:38px; }
+      }
+
+      .page{
+        max-width:1760px;
+        margin:0 auto;
+        padding:clamp(6px,1.1vh,14px) clamp(8px,1.4vw,22px);
+        height:100dvh;
+        display:flex;
+        flex-direction:column;
+      }
+      @media (min-width:1101px){
+        body{ overflow:hidden; }
+      }
+      /* ---------- desk-calendar sheet ---------- */
+      .sheet{
+        background:var(--sheet);
+        border:1px solid var(--line);
+        box-shadow:var(--shadow);
+        display:flex;
+        flex-direction:column;
+        flex:1;
+        min-height:0;
+      }
+      .binding{
+        height:16px;
+        flex:none;
+        background:linear-gradient(var(--band-deep),var(--band-deep));
+        position:relative;
+        overflow:hidden;
+      }
+      .binding::before{
+        content:"";
+        position:absolute; inset:0;
+        background-image:radial-gradient(circle at 5px 50%, rgba(0,0,0,.55) 3.2px, rgba(255,255,255,.28) 3.6px, transparent 4.4px);
+        background-size:34px 100%;
+        background-position:12px 0;
+      }
+      /* ---------- top: photo + month ---------- */
+      .top{
+        display:grid;
+        grid-template-columns:minmax(0,1.31fr) minmax(0,1fr);
+        flex:2.58 1 0;
+        min-height:0;
+      }
+      .photo{
+        position:relative;
+        overflow:hidden;
+        min-height:0;
+        background:#3a3128;
+      }
+      .photo img{
+        position:absolute; inset:0;
+        width:100%; height:100%;
+        object-fit:cover;
+        display:block;
+      }
+      .photo img.layer{ opacity:0; z-index:0; }
+      .photo img.layer.show{ opacity:1; z-index:1; }
+      @media (prefers-reduced-motion: no-preference){
+        .photo img.layer{ transition:opacity .8s ease; }
+        .photo img.boot{ animation:fadein .7s ease both; }
+        @keyframes fadein{ from{opacity:.25} to{opacity:1} }
+      }
+      .photo-nav{
+        position:absolute;
+        top:12px; right:12px;
+        z-index:4;
+        display:flex;
+        gap:6px;
+      }
+      .photo-swap{
+        width:38px; height:38px;
+        min-height:38px;
+        padding:0;
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+        border-radius:50%;
+        border:1px solid rgba(255,246,230,.38);
+        background:rgba(18,10,4,.30);
+        color:#fdf6e9;
+        line-height:1;
+      }
+      .photo-swap:hover{ background:rgba(18,10,4,.50); }
+      .photo-swap:focus-visible{ outline:2px solid #fdf6e9; outline-offset:2px; }
+      .photo-swap svg{ width:18px; height:18px; display:block; }
+      @media (max-width:560px){
+        .photo-nav{ top:56px; right:10px; }
+        .photo-swap{ width:36px; height:36px; min-height:36px; }
+      }
+      .photo .scrim{
+        position:absolute; inset:auto 0 0 0;
+        z-index:3;
+        padding:96px 18px 14px;
+        background:linear-gradient(to top, rgba(18,10,4,.42) 0%, rgba(18,10,4,.20) 42%, rgba(18,10,4,0) 82%);
+        color:#fdf6e9;
+        display:flex;
+        align-items:flex-end;
+        justify-content:space-between;
+        gap:14px;
+        flex-wrap:wrap;
+      }
+      .today-big{ line-height:1.05; min-width:0; text-shadow:0 1px 10px rgba(10,5,2,.42), 0 0 3px rgba(10,5,2,.35); }
+      .clockbox{ min-width:0; }
+      .today-big .dow{ font-size:clamp(19px,1.65vw,26px); font-weight:700; letter-spacing:.20em; opacity:.98; margin-bottom:3px; }
+      .today-big .dnum{
+        font-family:var(--font-num);
+        font-weight:700;
+        font-size:clamp(52px,5.2vw,92px);
+        line-height:.95;
+        font-variant-numeric:tabular-nums;
+      }
+      .today-big .lunar-line{ font-size:clamp(16px,1.35vw,22px); font-weight:600; margin-top:5px; opacity:.98; }
+      .today-big .fest-line{ font-size:clamp(15px,1.15vw,19px); margin-top:3px; color:#ffd9a8; font-weight:700; }
+      .clockbox{ text-align:right; flex:none; }
+      .clockbox .clock{
+        font-family:var(--font-num);
+        font-weight:700;
+        font-size:clamp(54px,4.8vw,78px);
+        line-height:.95;
+        letter-spacing:.01em;
+        font-variant-numeric:tabular-nums;
+        text-shadow:0 1px 14px rgba(0,0,0,.45), 0 0 3px rgba(0,0,0,.5);
+        white-space:nowrap;
+      }
+      .clockbox .place{ font-size:clamp(13.5px,1.15vw,17.5px); font-weight:500; opacity:.95; margin-top:7px; text-align:right; text-shadow:0 1px 8px rgba(0,0,0,.45); }
+      .sec-toggle{
+        margin-top:8px;
+        min-height:28px;
+        padding:3px 11px;
+        border-radius:999px;
+        border:1px solid rgba(255,246,230,.38);
+        background:rgba(18,10,4,.30);
+        color:#fdf6e9;
+        font-size:12px;
+        font-weight:700;
+        letter-spacing:.06em;
+        line-height:1;
+      }
+      .sec-toggle:hover{ background:rgba(18,10,4,.48); }
+      .sec-toggle:focus-visible{ outline:2px solid #fdf6e9; outline-offset:2px; }
+      /* ---------- month calendar ---------- */
+      .month{
+        background:var(--cal-bg);
+        display:flex;
+        flex-direction:column;
+        min-width:0;
+        min-height:0;
+      }
+      .month-head{
+        background:var(--band);
+        color:#fdf6e9;
+        padding:4px 16px 3px;
+        display:flex;
+        align-items:center;
+        gap:10px;
+      }
+      .month-head .script{
+        font-family:var(--font-num);
+        font-weight:700;
+        font-size:clamp(28px,2.55vw,42px);
+        line-height:1;
+        letter-spacing:.01em;
+        padding-right:4px;
+        white-space:nowrap;
+      }
+      .month-head .y-num{
+        font-family:var(--font-num);
+        font-weight:700;
+        font-size:clamp(22px,1.9vw,32px);
+        letter-spacing:.06em;
+        font-variant-numeric:tabular-nums;
+      }
+      .month-head .m-cn{
+        font-family:var(--font-num);
+        font-weight:900;
+        font-size:clamp(17px,1.4vw,23px);
+        margin-left:2px;
+        white-space:nowrap;
+      }
+      .nav{ margin-left:auto; display:flex; gap:6px; align-items:center; flex:none; }
+      .nav button{
+        min-width:40px; min-height:40px;
+        border:1px solid rgba(255,246,230,.45);
+        background:rgba(255,246,230,.12);
+        color:#fdf6e9;
+        border-radius:8px;
+        font-size:17px;
+        line-height:1;
+        padding:0 10px;
+      }
+      .nav button:hover{ background:rgba(255,246,230,.28); }
+      .nav button.today-btn{ font-size:13.5px; font-weight:700; letter-spacing:.08em; }
+      .week-head, .grid{ display:grid; grid-template-columns:repeat(7,1fr); }
+      .week-head{
+        padding:2px 6px 1px;
+        border-bottom:1px solid var(--line);
+      }
+      .week-head span{
+        font-family:var(--font-num);
+        text-align:center;
+        font-size:clamp(13px,1.1vw,18px);
+        font-weight:700;
+        letter-spacing:.14em;
+        color:var(--ink-soft);
+      }
+      .week-head span small{ display:block; font-size:.78em; letter-spacing:.3em; font-weight:500; color:var(--ink-faint); margin-top:1px; }
+      .week-head span:last-child{ color:var(--sun); }
+      .week-head span:nth-child(6){ color:var(--sat); }
+      .grid{ flex:1; min-height:0; padding:2px 6px 4px; gap:2px; grid-template-rows:repeat(6,minmax(0,1fr)); }
+      .cell{
+        border-radius:8px;
+        padding:2px 3px 1px 6px;
+        display:flex;
+        flex-direction:column;
+        align-items:flex-start;
+        min-height:0;
+        min-width:0;
+      }
+      .cell .num{
+        font-family:var(--font-num);
+        font-weight:700;
+        font-size:clamp(30px,min(2.95vw,4.5vh),50px);
+        line-height:.92;
+        letter-spacing:.01em;
+        font-variant-numeric:tabular-nums;
+        flex:none;
+      }
+      .cell .fest{
+        font-size:clamp(11px,.9vw,14.5px);
+        font-weight:700;
+        line-height:1.12;
+        margin-top:2px;
+        white-space:normal;
+        overflow-wrap:anywhere;
+        max-width:100%;
+        width:100%;
+        text-align:left;
+      }
+      .cell .fest.cn{ color:var(--cn); }
+      .cell .fest.us{ font-family:var(--font-num); font-weight:700; color:var(--us); white-space:nowrap; font-size:clamp(10px,.78vw,12.5px); letter-spacing:-.02em; }
+      .cell .fest.term{ color:var(--term); font-weight:500; }
+      .cell .lun{
+        font-size:clamp(11px,.86vw,13.5px);
+        font-weight:600;
+        color:var(--lunar);
+        line-height:1.12;
+        white-space:nowrap;
+        margin-top:2px;
+        text-align:left;
+      }
+      .grid.rows-6 .cell .num{ font-size:clamp(26px,min(2.4vw,3.5vh),38px); }
+      .grid.rows-6 .cell{ padding-top:1px; padding-bottom:0; }
+      .cell.dim{ opacity:.32; }
+      :root[data-theme="dark"] .cell.dim{ opacity:.5; }
+      .cell.sun .num{ color:var(--sun); }
+      .cell.sat .num{ color:var(--sat); }
+      .cell.today{
+        background:var(--today-bg);
+        color:var(--today-ink);
+        box-shadow:inset 0 0 0 1.5px rgba(46,26,9,.22), 0 2px 10px rgba(0,0,0,.18);
+      }
+      .cell.today .num, .cell.today.sun .num, .cell.today.sat .num{ color:var(--today-ink); }
+      .cell.today .lun{ color:var(--today-ink); opacity:.84; }
+      .cell.today .fest{ color:var(--today-ink); }
+      .cell:not(.today):hover{ background:var(--hover); }
+      /* ---------- year strip ---------- */
+      .year-strip{
+        border-top:1px solid var(--line);
+        padding:5px 14px 6px;
+        background:var(--year-bg);
+        display:flex;
+        flex-direction:column;
+        flex:1.42 1 0;
+      }
+      .year-head{
+        display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+        margin-bottom:3px;
+        flex:none;
+      }
+      .year-head .y-title{
+        font-family:"Noto Serif SC",serif; font-weight:900;
+        font-size:clamp(12.5px,.95vw,14.5px);
+        letter-spacing:.06em;
+        line-height:1.05;
+      }
+      .year-head .y-title em{
+        font-family:var(--font-num); font-style:normal; font-weight:700; color:var(--ink-soft); margin-left:6px; letter-spacing:.04em;
+      }
+      .legend{ display:flex; gap:14px; flex-wrap:wrap; font-size:11px; font-weight:500; color:var(--ink-soft); margin-left:auto; align-items:center; }
+      .legend i{ display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:5px; vertical-align:1px; }
+      .legend .dot-cn{ background:var(--cn); }
+      .legend .dot-us{ background:var(--us); }
+      .legend .dot-term{ background:var(--term); }
+      .year-nav{ display:flex; gap:6px; }
+      .year-nav button{
+        min-width:34px; min-height:18px;
+        border:1px solid var(--line);
+        background:transparent; color:var(--ink);
+        border-radius:8px; font-size:14px; padding:0 9px;
+      }
+      .year-nav button:hover{ background:var(--hover); }
+      .minis{
+        display:grid;
+        grid-template-columns:repeat(6,1fr);
+        gap:6px 12px;
+        align-content:start;
+        flex:1;
+        min-height:0;
+      }
+      .mini{ cursor:pointer; border-radius:8px; padding:2px 7px 3px; border:1px solid transparent; }
+      .mini:hover{ background:var(--hover); }
+      .mini h3{
+        margin:0;
+        padding:0 0 2px;
+        line-height:1.2;
+        font-size:clamp(11px,1.28vh,12.5px);
+        letter-spacing:.08em;
+        font-weight:700;
+        display:flex; justify-content:space-between; align-items:baseline;
+        color:var(--ink);
+      }
+      .mini h3 .en{ font-family:var(--font-num); font-weight:700; letter-spacing:.08em; font-size:1.04em; }
+      .mini table{ width:100%; border-collapse:collapse; font-family:var(--font-num); font-size:clamp(11px,1.32vh,13px); line-height:1.74; font-weight:700; color:var(--ink); font-variant-numeric:tabular-nums; }
+      .mini th{ font-weight:700; color:var(--ink-soft); font-size:.78em; padding:0 0 1px; line-height:1.2; }
+      .mini td{ text-align:center; padding:0; position:relative; }
+      .mini td.sun{ color:var(--sun); }
+      .mini td .dt{ position:relative; display:inline-block; min-width:18px; border-radius:50%; }
+      .mini td.today .dt{ background:var(--today-bg); color:var(--today-ink); font-weight:700; }
+      .mini td i.dot{ position:absolute; left:50%; bottom:0; transform:translateX(-50%); width:4px; height:4px; border-radius:50%; }
+      .mini td i.dot.cn{ background:var(--cn); }
+      .mini td i.dot.us{ background:var(--us); }
+      /* ---------- responsive ---------- */
+      @media (min-width:821px){
+        .month-head{ padding-right:164px; }
+      }
+      @media (max-width:1100px){
+        .minis{ grid-template-columns:repeat(3,1fr); grid-template-rows:none; flex:none; }
+        .page{ height:auto; min-height:100dvh; }
+        .year-strip{ flex:none; }
+      }
+      @media (max-width:820px){
+        .page{ min-height:0; }
+        .top{ grid-template-columns:1fr; flex:none; }
+        .photo{ min-height:250px; aspect-ratio:16/10; }
+        .month{ min-height:430px; }
+        .grid{ min-height:340px; }
+      }
+      @media (max-width:560px){
+        .minis{ grid-template-columns:repeat(2,1fr); gap:8px 10px; }
+        .month-head{ flex-wrap:wrap; }
+        .nav{ margin-left:0; }
+        .cell{ padding:4px 5px 3px; }
+        .photo .scrim{ padding:64px 12px 10px; gap:6px; flex-direction:column; align-items:flex-start; }
+        .clockbox{ text-align:left; }
+        .sec-toggle{ margin-top:6px; }
+        .clockbox .clock{ font-size:42px; display:inline-block; margin-right:10px; }
+        .clockbox .place{ white-space:normal; text-align:left; display:inline-block; margin-top:0; }
+        .today-big .dnum{ font-size:46px; }
+      }
+      @media (min-width:821px) and (max-height:760px){
+        .photo{ min-height:0; }
+        .cell .num{ font-size:28px; }
+        .top{ flex:2.58 1 0; }
+        .year-strip{ padding:4px 12px 5px; }
+        .mini table{ line-height:1.55; }
+        .minis{ gap:4px 12px; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="top-controls">
+      <button type="button" class="fs-toggle" id="fsToggle" aria-label="进入全屏" aria-pressed="false" title="全屏">
+        <svg class="fs-icon icon-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+        <svg class="fs-icon icon-compress" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3v3a2 2 0 0 1-2 2H3"/><path d="M21 8h-3a2 2 0 0 1-2-2V3"/><path d="M3 16h3a2 2 0 0 1 2 2v3"/><path d="M16 21v-3a2 2 0 0 1 2-2h3"/></svg>
+      </button>
+      <button type="button" class="theme-toggle" id="themeToggle" aria-label="切换到浅色" aria-pressed="true" title="切换浅色 / 深色">
+        <svg class="theme-icon icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="theme-icon icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+        <span id="themeToggleLabel">浅色</span>
+      </button>
+    </div>
+    <div class="fs-toast" id="fsToast" role="status" aria-live="polite"></div>
+    <div class="page">
+      <div class="sheet">
+        <div class="binding" aria-hidden="true"></div>
+
+        <section class="top">
+          <div class="photo">
+            <img id="photoImg" class="layer show boot" src="assets/m11.jpg" alt="" />
+            <img id="photoImgB" class="layer" alt="" aria-hidden="true" />
+            <div class="photo-nav">
+              <button type="button" class="photo-swap" id="photoPrev" aria-label="上一张照片" title="上一张照片">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+              </button>
+              <button type="button" class="photo-swap" id="photoNext" aria-label="下一张照片" title="下一张照片">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+              </button>
+            </div>
+            <div class="scrim">
+              <div class="today-big">
+                <div class="dow" id="todayDow">—</div>
+                <div class="dnum" id="todayNum">—</div>
+                <div class="lunar-line" id="todayLunar">—</div>
+                <div class="fest-line" id="todayFest"></div>
+              </div>
+              <div class="clockbox">
+                <div class="clock" id="clock">--:--</div>
+                <div class="place" id="photoPlace">—</div>
+                <div><button type="button" class="sec-toggle" id="secToggle" aria-pressed="false" title="显示或隐藏秒数">显示秒数</button></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="month" aria-label="当月日历">
+            <div class="month-head">
+              <span class="script" id="headScript">November</span>
+              <span class="y-num" id="headYear">2026</span>
+              <span class="m-cn" id="headCn">十一月</span>
+              <div class="nav">
+                <button type="button" id="prevM" aria-label="上个月">‹</button>
+                <button type="button" class="today-btn" id="goToday">今天</button>
+                <button type="button" id="nextM" aria-label="下个月">›</button>
+              </div>
+            </div>
+            <div class="week-head" aria-hidden="true">
+              <span>MON<small>一</small></span><span>TUE<small>二</small></span><span>WED<small>三</small></span><span>THU<small>四</small></span><span>FRI<small>五</small></span><span>SAT<small>六</small></span><span>SUN<small>日</small></span>
+            </div>
+            <div class="grid" id="mainGrid"></div>
+          </div>
+        </section>
+
+        <section class="year-strip" aria-label="全年日历">
+          <div class="year-head">
+            <span class="y-title"><span id="yearTitle">2026 年历</span><em id="yearEn">2026 · Year at a Glance</em></span>
+            <div class="year-nav">
+              <button type="button" id="prevY" aria-label="上一年">‹</button>
+              <button type="button" id="nextY" aria-label="下一年">›</button>
+            </div>
+            <div class="legend">
+              <span><i class="dot-cn"></i>中国节日</span>
+              <span><i class="dot-us"></i>美国节日</span>
+              <span><i class="dot-term"></i>节气</span>
+            </div>
+          </div>
+          <div class="minis" id="minis"></div>
+        </section>
+      </div>
+    </div>
+
+    <script>
+    (function(){
+      "use strict";
+      /* ---------- theme toggle: default dark, manual only ---------- */
+      var themeToggle=document.getElementById("themeToggle");
+      var themeLabel=document.getElementById("themeToggleLabel");
+      var colorSchemeMeta=document.getElementById("colorSchemeMeta");
+      function applyTheme(theme){
+        var isDark=theme==="dark";
+        document.documentElement.setAttribute("data-theme", isDark?"dark":"light");
+        document.documentElement.style.colorScheme=isDark?"dark":"light";
+        if(colorSchemeMeta) colorSchemeMeta.setAttribute("content", isDark?"dark":"light");
+        if(themeToggle){
+          themeToggle.setAttribute("aria-pressed", isDark?"true":"false");
+          themeToggle.setAttribute("aria-label", isDark?"切换到浅色":"切换到深色");
+        }
+        if(themeLabel) themeLabel.textContent=isDark?"浅色":"深色";
+      }
+      applyTheme("dark");
+      if(themeToggle){
+        themeToggle.addEventListener("click",function(){
+          var cur=document.documentElement.getAttribute("data-theme")==="dark"?"dark":"light";
+          applyTheme(cur==="dark"?"light":"dark");
+        });
+      }
+      /* ---------- fullscreen toggle ----------
+         Why the old button "did nothing" on Portal, and why movies
+         there CAN go fullscreen while this page could not:
+
+         - A movie's fullscreen button is the player/browser's own:
+           the browser hands the <video> element to its native media
+           layer (on WebKit, video.webkitEnterFullscreen(); on Portal,
+           the device video pipeline). Media fullscreen is granted to
+           embedded content without any iframe delegation.
+         - A web page's fullscreen is a document privilege:
+           documentElement.requestFullscreen() only succeeds when
+           every ancestor iframe delegates the fullscreen permission
+           (allow="fullscreen" / allowfullscreen). The artifact shell
+           and Portal embed this page in an iframe WITHOUT that
+           delegation, so the call returns a promise that rejects
+           (NotAllowedError). The old handler never caught the
+           rejection and re-synced the icon synchronously, before the
+           async request settled — so the click produced no error, no
+           fullscreen and no icon change: literally no reaction.
+
+         Fix: try the real API first, with all vendor prefixes
+         (WebKit on Portal/Safari uses webkitRequestFullscreen,
+         which the old code never tried), catch rejection and the
+         fullscreenerror event, and when the host container refuses
+         — the normal case inside Portal — fall back to an in-page
+         fill mode that stretches the calendar over the whole
+         viewport the page controls. On a plain browser tab, where
+         document fullscreen is allowed, the native path is used. */
+      var fsToggle=document.getElementById("fsToggle");
+      var fsToast=document.getElementById("fsToast");
+      var pseudoFs=false;
+      var fsPendingTimer=null;
+      var fsToastTimer=null;
+      function nativeFsElement(){
+        return document.fullscreenElement||document.webkitFullscreenElement||document.mozFullScreenElement||document.msFullscreenElement||null;
+      }
+      function showFsToast(msg){
+        if(!fsToast) return;
+        fsToast.textContent=msg;
+        fsToast.classList.add("show");
+        if(fsToastTimer) clearTimeout(fsToastTimer);
+        fsToastTimer=setTimeout(function(){ fsToast.classList.remove("show"); },4200);
+      }
+      function syncFsToggle(){
+        var isFs=!!nativeFsElement()||pseudoFs;
+        if(!fsToggle) return;
+        fsToggle.classList.toggle("is-fs", isFs);
+        fsToggle.setAttribute("aria-pressed", isFs?"true":"false");
+        fsToggle.setAttribute("aria-label", isFs?"退出全屏":"进入全屏");
+        fsToggle.setAttribute("title", isFs?"退出全屏":"全屏");
+      }
+      function enterPseudoFs(silent){
+        pseudoFs=true;
+        document.documentElement.classList.add("pseudo-fs");
+        syncFsToggle();
+        if(!silent) showFsToast("已铺满整个窗口显示；系统全屏被 Portal 容器拦住了，再点一次按钮退出");
+      }
+      function exitPseudoFs(){
+        pseudoFs=false;
+        document.documentElement.classList.remove("pseudo-fs");
+        syncFsToggle();
+      }
+      function requestNativeFs(){
+        var root=document.documentElement;
+        var done=false;
+        function fail(){
+          if(done) return;
+          done=true;
+          if(fsPendingTimer){ clearTimeout(fsPendingTimer); fsPendingTimer=null; }
+          if(!nativeFsElement()&&!pseudoFs) enterPseudoFs(false);
+        }
+        try{
+          var p=null;
+          if(root.requestFullscreen){
+            try{ p=root.requestFullscreen({navigationUI:"hide"}); }
+            catch(optErr){ p=root.requestFullscreen(); }
+          }else if(root.webkitRequestFullscreen){
+            p=root.webkitRequestFullscreen();
+          }else if(root.webkitRequestFullScreen){
+            p=root.webkitRequestFullScreen();
+          }else if(root.mozRequestFullScreen){
+            p=root.mozRequestFullScreen();
+          }else if(root.msRequestFullscreen){
+            p=root.msRequestFullscreen();
+          }else{
+            fail();
+            return;
+          }
+          if(p&&typeof p.catch==="function"){
+            p.then(function(){
+              if(fsPendingTimer){ clearTimeout(fsPendingTimer); fsPendingTimer=null; }
+              syncFsToggle();
+            },fail);
+          }
+          /* Older WebKit returns no promise: if no fullscreenchange
+             arrives shortly, the request was refused — fall back. */
+          if(fsPendingTimer) clearTimeout(fsPendingTimer);
+          fsPendingTimer=setTimeout(function(){
+            fsPendingTimer=null;
+            if(!nativeFsElement()&&!pseudoFs) fail();
+          },400);
+        }catch(e){
+          fail();
+        }
+      }
+      function exitNativeFs(){
+        try{
+          if(document.exitFullscreen) document.exitFullscreen();
+          else if(document.webkitExitFullscreen) document.webkitExitFullscreen();
+          else if(document.mozCancelFullScreen) document.mozCancelFullScreen();
+          else if(document.msExitFullscreen) document.msExitFullscreen();
+        }catch(e){ /* already out of fullscreen */ }
+      }
+      if(fsToggle){
+        fsToggle.addEventListener("click",function(){
+          if(nativeFsElement()){ exitNativeFs(); }
+          else if(pseudoFs){ exitPseudoFs(); }
+          else{ requestNativeFs(); }
+        });
+        document.addEventListener("fullscreenchange",function(){
+          if(fsPendingTimer){ clearTimeout(fsPendingTimer); fsPendingTimer=null; }
+          if(nativeFsElement()&&pseudoFs) exitPseudoFs();
+          syncFsToggle();
+        });
+        document.addEventListener("webkitfullscreenchange",function(){
+          if(fsPendingTimer){ clearTimeout(fsPendingTimer); fsPendingTimer=null; }
+          if(nativeFsElement()&&pseudoFs) exitPseudoFs();
+          syncFsToggle();
+        });
+        document.addEventListener("mozfullscreenchange",syncFsToggle);
+        document.addEventListener("MSFullscreenChange",syncFsToggle);
+        document.addEventListener("fullscreenerror",function(){
+          if(!nativeFsElement()&&!pseudoFs) enterPseudoFs(false);
+        });
+        document.addEventListener("webkitfullscreenerror",function(){
+          if(!nativeFsElement()&&!pseudoFs) enterPseudoFs(false);
+        });
+        document.addEventListener("keydown",function(e){
+          if(e.key==="Escape"&&pseudoFs){ exitPseudoFs(); }
+        });
+        syncFsToggle();
+      }
+      var MONTH_EN = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+      var MONTH_CN = ["一月","二月","三月","四月","五月","六月","七月","八月","九月","十月","十一月","十二月"];
+      var DOW_CN = ["星期日","星期一","星期二","星期三","星期四","星期五","星期六"];
+      /* ---------- photo wall: monthly world-scenery gallery ----------
+         Twelve batches, one per month, 30 photos each, picked to
+         match the month's season. Every batch mixes the two kinds
+         of scenery about half and half: pure nature (mountains,
+         lakes, coasts, flower fields) and the human landscape —
+         city skylines, old towns, temples, castles, palaces,
+         ancient ruins, lighthouses and old bridges. The top photo
+         rotates within the
+         current month's batch, advancing one photo every minute
+         with the 0.8s crossfade (a full lap takes 30 minutes);
+         when the month changes, the whole batch changes with it.
+         The wall starts on the day's scheduled photo: the batch
+         entry at index (day of month - 1). GALLERY[m] is month m+1. */
+      var GALLERY = [
+        [ /* 1月 */
+          {src:"assets/m01.jpg", place:"加拿大 · 落基山冰湖"},
+          {src:"assets/g01-02.jpg", place:"加拿大 · 露易丝湖雪原"},
+          {src:"assets/g01-03.jpg", place:"瑞士采尔马特 · 马特洪峰"},
+          {src:"assets/c01-04.jpg", place:"中国哈尔滨 · 冰雪大世界"},
+          {src:"assets/c01-05.jpg", place:"日本京都 · 祇园雪夜老街"},
+          {src:"assets/c01-06.jpg", place:"俄罗斯圣彼得堡 · 冬宫广场雪景"},
+          {src:"assets/d-aurora.jpg", place:"冰岛 · 极光之夜"},
+          {src:"assets/g01-08.jpg", place:"芬兰拉普兰 · 极光雪林"},
+          {src:"assets/c01-09.jpg", place:"奥地利哈尔施塔特 · 雪镇湖畔"},
+          {src:"assets/c01-10.jpg", place:"奥地利因斯布鲁克 · 冬日老城"},
+          {src:"assets/g01-11.jpg", place:"德国 · 新天鹅堡雪景"},
+          {src:"assets/g01-12.jpg", place:"克罗地亚十六湖 · 冰瀑"},
+          {src:"assets/g01-13.jpg", place:"日本白川乡 · 合掌村雪夜"},
+          {src:"assets/g01-14.jpg", place:"冰岛 · 杰古沙龙冰河湖"},
+          {src:"assets/d-wintercoast.jpg", place:"冰岛 · 冬日黑沙滩"},
+          {src:"assets/c01-16.jpg", place:"苏格兰爱丁堡 · 城堡雪景"},
+          {src:"assets/g01-17.jpg", place:"挪威特罗姆瑟 · 极光"},
+          {src:"assets/g01-18.jpg", place:"中国黄山 · 冬雪云海"},
+          {src:"assets/c01-19.jpg", place:"中国北京 · 天坛雪景"},
+          {src:"assets/g01-20.jpg", place:"中国雪乡 · 雪夜"},
+          {src:"assets/g01-21.jpg", place:"中国新疆喀纳斯 · 雪湖"},
+          {src:"assets/c01-22.jpg", place:"阿根廷乌斯怀亚 · 世界尽头灯塔"},
+          {src:"assets/g01-23.jpg", place:"格陵兰 · 伊卢利萨特冰峡湾"},
+          {src:"assets/c01-24.jpg", place:"冰岛雷克雅未克 · 大教堂雪城"},
+          {src:"assets/c01-25.jpg", place:"俄罗斯喀山 · 克里姆林宫冬雪"},
+          {src:"assets/g01-26.jpg", place:"南极 · 冰原大陆"},
+          {src:"assets/g01-27.jpg", place:"加拿大魁北克 · 古城雪夜"},
+          {src:"assets/g01-28.jpg", place:"瑞士 · 阿尔卑斯雪山村"},
+          {src:"assets/c01-29.jpg", place:"尼泊尔加德满都 · 杜巴广场古庙"},
+          {src:"assets/g01-30.jpg", place:"冰岛 · 塞里雅兰瀑布冬景"}
+        ],
+        [ /* 2月 */
+          {src:"assets/m02.jpg", place:"奥地利 · 雪山小镇黄昏"},
+          {src:"assets/g02-02.jpg", place:"日本二世谷 · 雪山"},
+          {src:"assets/g02-03.jpg", place:"美国阿拉斯加 · 费尔班克斯极光"},
+          {src:"assets/c02-04.jpg", place:"意大利威尼斯 · 狂欢节大运河"},
+          {src:"assets/d-baikal.jpg", place:"俄罗斯 · 贝加尔湖冰原"},
+          {src:"assets/g02-06.jpg", place:"日本北海道 · 鄂霍次克流冰"},
+          {src:"assets/c02-07.jpg", place:"中国周庄 · 雪夜水乡"},
+          {src:"assets/g02-08.jpg", place:"中国峨眉山 · 雪景"},
+          {src:"assets/c02-09.jpg", place:"中国平遥古城 · 灯会之夜"},
+          {src:"assets/c02-10.jpg", place:"中国上海 · 豫园灯会"},
+          {src:"assets/g02-11.jpg", place:"中国南京梅花山 · 梅花"},
+          {src:"assets/g02-12.jpg", place:"中国苏州园林 · 梅影"},
+          {src:"assets/g02-13.jpg", place:"德国巴伐利亚 · 雪山村落"},
+          {src:"assets/g02-14.jpg", place:"瑞士因特拉肯 · 冬日湖畔"},
+          {src:"assets/c02-15.jpg", place:"比利时根特 · 运河古城夜色"},
+          {src:"assets/g02-16.jpg", place:"意大利科尔蒂纳 · 雪山小镇"},
+          {src:"assets/c02-17.jpg", place:"波兰格但斯克 · 冬日古城河"},
+          {src:"assets/g02-18.jpg", place:"冰岛 · 教会山极光"},
+          {src:"assets/c02-19.jpg", place:"挪威卑尔根 · 布吕根码头冬雪"},
+          {src:"assets/c02-20.jpg", place:"中国哈尔滨 · 圣索菲亚教堂雪夜"},
+          {src:"assets/c02-21.jpg", place:"乌兹别克斯坦撒马尔罕 · 雷吉斯坦广场"},
+          {src:"assets/g02-22.jpg", place:"格鲁吉亚 · 卡兹别克雪山"},
+          {src:"assets/g02-23.jpg", place:"土耳其卡帕多奇亚 · 雪原热气球"},
+          {src:"assets/c02-24.jpg", place:"摩洛哥马拉喀什 · 库图比亚老城"},
+          {src:"assets/g02-25.jpg", place:"新西兰特卡波湖 · 雪山星空"},
+          {src:"assets/g02-26.jpg", place:"加拿大班夫 · 冰瀑峡谷"},
+          {src:"assets/g02-27.jpg", place:"日本小樽 · 雪夜运河"},
+          {src:"assets/g02-28.jpg", place:"瑞典阿比斯库 · 极光"},
+          {src:"assets/c02-29.jpg", place:"芬兰罗瓦涅米 · 圣诞老人村"},
+          {src:"assets/g02-30.jpg", place:"中国吉林 · 松花江雾凇"}
+        ],
+        [ /* 3月 */
+          {src:"assets/d-rapeseed.jpg", place:"中国罗平 · 油菜花海"},
+          {src:"assets/g03-02.jpg", place:"中国婺源 · 油菜花海"},
+          {src:"assets/g03-03.jpg", place:"中国兴化 · 水上油菜花"},
+          {src:"assets/g03-04.jpg", place:"日本河津 · 早樱"},
+          {src:"assets/c03-05.jpg", place:"日本姬路城 · 樱花"},
+          {src:"assets/g03-06.jpg", place:"中国武汉大学 · 樱花"},
+          {src:"assets/g03-07.jpg", place:"中国无锡鼋头渚 · 樱花湖"},
+          {src:"assets/c03-08.jpg", place:"中国大理古城 · 南门春光"},
+          {src:"assets/g03-09.jpg", place:"中国大理洱海 · 春光"},
+          {src:"assets/g03-10.jpg", place:"中国桂林漓江 · 春雾"},
+          {src:"assets/c03-11.jpg", place:"中国乌镇 · 春夜水乡"},
+          {src:"assets/g03-12.jpg", place:"中国三清山 · 春雾奇峰"},
+          {src:"assets/c03-13.jpg", place:"中国开平 · 碉楼春色"},
+          {src:"assets/g03-14.jpg", place:"中国元阳梯田 · 日出"},
+          {src:"assets/g03-15.jpg", place:"德国波恩 · 樱花大道"},
+          {src:"assets/g03-16.jpg", place:"美国华盛顿 · 樱花"},
+          {src:"assets/g03-17.jpg", place:"法国巴黎 · 春日铁塔"},
+          {src:"assets/g03-18.jpg", place:"日本京都 · 哲学之道樱花"},
+          {src:"assets/g03-19.jpg", place:"韩国首尔景福宫 · 樱花"},
+          {src:"assets/c03-20.jpg", place:"韩国釜山 · 甘川文化村"},
+          {src:"assets/g03-21.jpg", place:"中国台湾阿里山 · 樱花"},
+          {src:"assets/c03-22.jpg", place:"中国南京 · 夫子庙秦淮夜色"},
+          {src:"assets/g03-23.jpg", place:"中国新疆伊犁 · 杏花谷"},
+          {src:"assets/g03-24.jpg", place:"中国洛阳 · 牡丹"},
+          {src:"assets/g03-25.jpg", place:"中国杭州西湖 · 春柳"},
+          {src:"assets/g03-26.jpg", place:"中国扬州瘦西湖 · 春"},
+          {src:"assets/g03-27.jpg", place:"中国金山岭长城 · 春花"},
+          {src:"assets/c03-28.jpg", place:"中国敦煌 · 莫高窟九层楼"},
+          {src:"assets/c03-29.jpg", place:"葡萄牙里斯本 · 阿尔法玛电车老街"},
+          {src:"assets/g03-30.jpg", place:"中国武汉东湖 · 樱花园"}
+        ],
+        [ /* 4月 */
+          {src:"assets/m03.jpg", place:"日本 · 富士山与樱花"},
+          {src:"assets/m04.jpg", place:"荷兰 · 郁金香花田"},
+          {src:"assets/g04-03.jpg", place:"日本弘前城 · 樱花"},
+          {src:"assets/g04-04.jpg", place:"日本东京千鸟渊 · 樱花"},
+          {src:"assets/g04-05.jpg", place:"荷兰阿姆斯特丹 · 春日运河"},
+          {src:"assets/g04-06.jpg", place:"荷兰利瑟 · 郁金香花田"},
+          {src:"assets/g04-07.jpg", place:"荷兰库肯霍夫 · 郁金香园"},
+          {src:"assets/g04-08.jpg", place:"美国斯卡吉特谷 · 郁金香"},
+          {src:"assets/c04-09.jpg", place:"中国西塘 · 春日水乡"},
+          {src:"assets/c04-10.jpg", place:"中国台湾九份 · 山城老街灯火"},
+          {src:"assets/c04-11.jpg", place:"西班牙托莱多 · 古城春色"},
+          {src:"assets/g04-12.jpg", place:"加拿大温哥华 · 樱花"},
+          {src:"assets/g04-13.jpg", place:"美国纽约 · 布鲁克林樱花"},
+          {src:"assets/g04-14.jpg", place:"加拿大多伦多 · 樱花"},
+          {src:"assets/g04-15.jpg", place:"瑞典斯德哥尔摩 · 樱花"},
+          {src:"assets/g04-16.jpg", place:"英国伦敦 · 春花公园"},
+          {src:"assets/c04-17.jpg", place:"法国戈尔德 · 普罗旺斯石头城"},
+          {src:"assets/g04-18.jpg", place:"意大利托斯卡纳 · 春日丘陵"},
+          {src:"assets/c04-19.jpg", place:"爱尔兰戈尔韦 · 彩色老街"},
+          {src:"assets/g04-20.jpg", place:"瑞士劳特布龙嫩 · 瀑布谷"},
+          {src:"assets/c04-21.jpg", place:"奥地利萨尔茨堡 · 老城春色"},
+          {src:"assets/g04-22.jpg", place:"斯洛文尼亚布莱德湖 · 春"},
+          {src:"assets/g04-23.jpg", place:"克罗地亚十六湖 · 春日瀑布"},
+          {src:"assets/g04-24.jpg", place:"中国稻城亚丁 · 春雪山"},
+          {src:"assets/g04-25.jpg", place:"中国新疆伊犁 · 春日草原"},
+          {src:"assets/c04-26.jpg", place:"中国大同 · 云冈石窟大佛"},
+          {src:"assets/g04-27.jpg", place:"中国贵州梵净山 · 春雾"},
+          {src:"assets/c04-28.jpg", place:"中国洛阳 · 龙门石窟春色"},
+          {src:"assets/g04-29.jpg", place:"中国黄山 · 春云海"},
+          {src:"assets/g04-30.jpg", place:"中国庐山 · 春瀑"}
+        ],
+        [ /* 5月 */
+          {src:"assets/d-terraces.jpg", place:"越南 · 青山梯田"},
+          {src:"assets/g05-02.jpg", place:"日本北海道 · 湧别郁金香公园"},
+          {src:"assets/g05-03.jpg", place:"日本北海道 · 芝樱花海"},
+          {src:"assets/g05-04.jpg", place:"日本常陆海滨公园 · 粉蝶花海"},
+          {src:"assets/g05-05.jpg", place:"日本足利花卉公园 · 紫藤"},
+          {src:"assets/g05-06.jpg", place:"日本河内藤园 · 紫藤隧道"},
+          {src:"assets/g05-07.jpg", place:"法国吉维尼 · 莫奈花园"},
+          {src:"assets/g05-08.jpg", place:"加拿大布查特花园 · 春"},
+          {src:"assets/g05-09.jpg", place:"英国科茨沃尔德 · 春日村庄"},
+          {src:"assets/g05-10.jpg", place:"德国国王湖 · 春"},
+          {src:"assets/g05-11.jpg", place:"英国湖区 · 春光"},
+          {src:"assets/g05-12.jpg", place:"挪威罗弗敦 · 春末峡湾"},
+          {src:"assets/c05-13.jpg", place:"冰岛维克镇 · 红顶教堂与黑沙滩"},
+          {src:"assets/g05-14.jpg", place:"加拿大幽鹤 · 翡翠湖"},
+          {src:"assets/c05-15.jpg", place:"加拿大班夫 · 小镇雪山主街"},
+          {src:"assets/g05-16.jpg", place:"美国优胜美地 · 春瀑"},
+          {src:"assets/c05-17.jpg", place:"美国塞多纳 · 红岩圣十字教堂"},
+          {src:"assets/c05-18.jpg", place:"中国嘉峪关 · 关城落日"},
+          {src:"assets/g05-19.jpg", place:"中国青海湖 · 春"},
+          {src:"assets/c05-20.jpg", place:"中国呼和浩特 · 五塔寺"},
+          {src:"assets/g05-21.jpg", place:"中国德天瀑布 · 春"},
+          {src:"assets/c05-22.jpg", place:"中国贵州西江 · 千户苗寨夜色"},
+          {src:"assets/c05-23.jpg", place:"中国香格里拉 · 松赞林寺"},
+          {src:"assets/g05-24.jpg", place:"中国梅里雪山 · 日照金山"},
+          {src:"assets/g05-25.jpg", place:"中国四姑娘山 · 春谷"},
+          {src:"assets/c05-26.jpg", place:"中国四川理塘 · 高原古镇"},
+          {src:"assets/g05-27.jpg", place:"中国珠峰 · 春日雪峰"},
+          {src:"assets/c05-28.jpg", place:"中国拉萨 · 八廓街"},
+          {src:"assets/g05-29.jpg", place:"中国羊卓雍措 · 蓝湖"},
+          {src:"assets/c05-30.jpg", place:"菲律宾维甘 · 世界遗产老街"}
+        ],
+        [ /* 6月 */
+          {src:"assets/m07.jpg", place:"法国 · 普罗旺斯薰衣草"},
+          {src:"assets/d-santorini.jpg", place:"希腊 · 圣托里尼"},
+          {src:"assets/d-steppe.jpg", place:"蒙古 · 草原牧歌"},
+          {src:"assets/g06-04.jpg", place:"法国瓦伦索勒 · 薰衣草原"},
+          {src:"assets/g06-05.jpg", place:"日本富良野 · 薰衣草花田"},
+          {src:"assets/g06-06.jpg", place:"中国新疆霍城 · 薰衣草"},
+          {src:"assets/g06-07.jpg", place:"意大利科莫湖 · 初夏"},
+          {src:"assets/g06-08.jpg", place:"意大利阿马尔菲海岸 · 夏"},
+          {src:"assets/g06-09.jpg", place:"意大利五渔村 · 夏日海岸"},
+          {src:"assets/g06-10.jpg", place:"克罗地亚克尔卡瀑布 · 夏"},
+          {src:"assets/c06-11.jpg", place:"斯洛文尼亚卢布尔雅那 · 河畔古城"},
+          {src:"assets/g06-12.jpg", place:"奥地利戈绍湖 · 夏"},
+          {src:"assets/c06-13.jpg", place:"德国贝希特斯加登 · 阿尔卑斯小镇"},
+          {src:"assets/g06-14.jpg", place:"瑞士卢塞恩湖 · 夏"},
+          {src:"assets/g06-15.jpg", place:"挪威盖朗厄尔峡湾 · 夏"},
+          {src:"assets/g06-16.jpg", place:"瑞典斯德哥尔摩群岛 · 夏"},
+          {src:"assets/c06-17.jpg", place:"芬兰波尔沃 · 红色河仓老城"},
+          {src:"assets/g06-18.jpg", place:"冰岛教会山 · 夏夜"},
+          {src:"assets/c06-19.jpg", place:"苏格兰波特里 · 彩色渔港"},
+          {src:"assets/g06-20.jpg", place:"加拿大露易丝湖 · 夏"},
+          {src:"assets/g06-21.jpg", place:"加拿大贾斯珀 · 玛琳湖"},
+          {src:"assets/c06-22.jpg", place:"美国杰克逊镇 · 鹿角拱门"},
+          {src:"assets/g06-23.jpg", place:"美国大提顿 · 夏山湖"},
+          {src:"assets/c06-24.jpg", place:"中国西宁 · 塔尔寺白塔群"},
+          {src:"assets/g06-25.jpg", place:"中国新疆那拉提 · 夏日草原"},
+          {src:"assets/c06-26.jpg", place:"中国吐鲁番 · 高昌故城"},
+          {src:"assets/c06-27.jpg", place:"中国福建 · 土楼群"},
+          {src:"assets/g06-28.jpg", place:"中国贵州荔波小七孔 · 夏"},
+          {src:"assets/c06-29.jpg", place:"中国海口 · 骑楼老街"},
+          {src:"assets/c06-30.jpg", place:"日本竹富岛 · 琉球古村落"}
+        ],
+        [ /* 7月 */
+          {src:"assets/m05.jpg", place:"奥地利 · 哈尔施塔特"},
+          {src:"assets/m06.jpg", place:"加拿大 · 梦莲湖"},
+          {src:"assets/c07-03.jpg", place:"斯洛文尼亚布莱德湖 · 湖心岛教堂"},
+          {src:"assets/g07-04.jpg", place:"意大利多洛米蒂 · 布拉耶斯湖"},
+          {src:"assets/c07-05.jpg", place:"意大利奥蒂塞伊 · 多洛米蒂山谷小镇"},
+          {src:"assets/g07-06.jpg", place:"瑞士采尔马特 · 马特洪峰夏湖"},
+          {src:"assets/g07-07.jpg", place:"瑞士因特拉肯 · 夏湖"},
+          {src:"assets/g07-08.jpg", place:"瑞士拉沃葡萄园 · 夏日湖畔"},
+          {src:"assets/g07-09.jpg", place:"法国尼斯 · 蔚蓝海岸"},
+          {src:"assets/c07-10.jpg", place:"西班牙瓦尔德莫萨 · 石头古村老街"},
+          {src:"assets/g07-11.jpg", place:"葡萄牙阿尔加维 · 悬崖海滩"},
+          {src:"assets/g07-12.jpg", place:"希腊米科诺斯 · 爱琴海之夏"},
+          {src:"assets/c07-13.jpg", place:"克罗地亚杜布罗夫尼克 · 古城墙海岸"},
+          {src:"assets/g07-14.jpg", place:"黑山科托尔湾 · 夏"},
+          {src:"assets/g07-15.jpg", place:"挪威罗弗敦 · 夏日红屋"},
+          {src:"assets/c07-16.jpg", place:"冰岛阿克拉内斯 · 海岸灯塔"},
+          {src:"assets/g07-17.jpg", place:"法罗群岛 · 草帽瀑布夏景"},
+          {src:"assets/g07-18.jpg", place:"格陵兰迪斯科湾 · 夏日冰山"},
+          {src:"assets/c07-19.jpg", place:"美国苏厄德 · 阿拉斯加港镇雪山"},
+          {src:"assets/g07-20.jpg", place:"加拿大佩托湖 · 夏"},
+          {src:"assets/g07-21.jpg", place:"美国冰川公园 · 夏日山道"},
+          {src:"assets/c07-22.jpg", place:"美国莱文沃思 · 巴伐利亚风情村"},
+          {src:"assets/g07-23.jpg", place:"美国夏威夷 · 纳帕利海岸"},
+          {src:"assets/c07-24.jpg", place:"中国喀纳斯 · 图瓦村落夏日"},
+          {src:"assets/g07-25.jpg", place:"中国新疆巴音布鲁克 · 天鹅湖草原"},
+          {src:"assets/g07-26.jpg", place:"中国冈仁波齐 · 夏"},
+          {src:"assets/c07-27.jpg", place:"中国四川塔公 · 草原寺庙与雅拉雪山"},
+          {src:"assets/g07-28.jpg", place:"中国茶卡盐湖 · 天空之镜"},
+          {src:"assets/g07-29.jpg", place:"中国张掖丹霞 · 夏日落"},
+          {src:"assets/c07-30.jpg", place:"日本函馆 · 港城夜景"}
+        ],
+        [ /* 8月 */
+          {src:"assets/m08.jpg", place:"美国加州 · 大苏尔"},
+          {src:"assets/m09.jpg", place:"向日葵花田 · 日落"},
+          {src:"assets/d-desert.jpg", place:"撒哈拉 · 金色沙丘"},
+          {src:"assets/g08-04.jpg", place:"希腊克里特 · 巴洛斯潟湖"},
+          {src:"assets/c08-05.jpg", place:"意大利阿尔盖罗 · 海墙古城"},
+          {src:"assets/c08-06.jpg", place:"法国博尼法乔 · 悬崖古城港"},
+          {src:"assets/g08-07.jpg", place:"西班牙圣塞巴斯蒂安 · 夏日海湾"},
+          {src:"assets/g08-08.jpg", place:"法国比亚里茨 · 冲浪海岸"},
+          {src:"assets/c08-09.jpg", place:"英国圣艾夫斯 · 康沃尔港镇"},
+          {src:"assets/c08-10.jpg", place:"拉脱维亚里加 · 老城夏日"},
+          {src:"assets/g08-11.jpg", place:"格鲁吉亚巴统 · 黑海之夏"},
+          {src:"assets/g08-12.jpg", place:"土耳其费特希耶 · 蓝潟湖"},
+          {src:"assets/c08-13.jpg", place:"埃及亚历山大 · 奎特贝城堡海港"},
+          {src:"assets/g08-14.jpg", place:"马尔代夫 · 环礁潟湖"},
+          {src:"assets/g08-15.jpg", place:"塞舌尔 · 拉迪格岛海滩"},
+          {src:"assets/g08-16.jpg", place:"毛里求斯 · 潟湖海岛"},
+          {src:"assets/g08-17.jpg", place:"斐济 · 南太平洋海岛"},
+          {src:"assets/g08-18.jpg", place:"大溪地波拉波拉 · 潟湖"},
+          {src:"assets/c08-19.jpg", place:"日本长崎 · 港城夏日"},
+          {src:"assets/c08-20.jpg", place:"中国台湾台南 · 安平古堡"},
+          {src:"assets/c08-21.jpg", place:"中国普陀山 · 海岛古寺"},
+          {src:"assets/g08-22.jpg", place:"中国青岛 · 夏日海岸"},
+          {src:"assets/g08-23.jpg", place:"中国厦门鼓浪屿 · 夏"},
+          {src:"assets/c08-24.jpg", place:"中国巴丹吉林 · 沙漠古庙湖"},
+          {src:"assets/g08-25.jpg", place:"中国敦煌鸣沙山 · 沙漠落日"},
+          {src:"assets/c08-26.jpg", place:"中国内蒙古 · 五当召寺"},
+          {src:"assets/g08-27.jpg", place:"纳米比亚索苏斯弗雷 · 红沙丘"},
+          {src:"assets/c08-28.jpg", place:"约旦佩特拉 · 卡兹尼神殿古城"},
+          {src:"assets/g08-29.jpg", place:"美国纪念碑谷 · 夏漠"},
+          {src:"assets/c08-30.jpg", place:"美国圣菲 · 土坯老城大教堂"}
+        ],
+        [ /* 9月 */
+          {src:"assets/d-canyon.jpg", place:"美国 · 大峡谷"},
+          {src:"assets/g09-02.jpg", place:"加拿大班夫 · 落叶松金秋"},
+          {src:"assets/g09-03.jpg", place:"美国阿斯本 · 金色白杨"},
+          {src:"assets/c09-04.jpg", place:"美国斯托 · 佛蒙特秋日教堂村"},
+          {src:"assets/c09-05.jpg", place:"美国波特兰 · 海岬灯塔秋色"},
+          {src:"assets/g09-06.jpg", place:"美国大烟山 · 秋雾"},
+          {src:"assets/c09-07.jpg", place:"美国威廉斯堡 · 殖民古镇秋街"},
+          {src:"assets/g09-08.jpg", place:"中国婺源篁岭 · 晒秋"},
+          {src:"assets/g09-09.jpg", place:"中国塔川 · 秋色村落"},
+          {src:"assets/g09-10.jpg", place:"中国龙脊梯田 · 金秋"},
+          {src:"assets/g09-11.jpg", place:"中国元阳梯田 · 秋收"},
+          {src:"assets/g09-12.jpg", place:"中国新疆禾木村 · 初秋"},
+          {src:"assets/g09-13.jpg", place:"中国阿尔山 · 秋日林海"},
+          {src:"assets/c09-14.jpg", place:"中国漠河 · 北极村秋色"},
+          {src:"assets/g09-15.jpg", place:"中国长白山 · 秋色"},
+          {src:"assets/c09-16.jpg", place:"中国沈阳故宫 · 秋色"},
+          {src:"assets/g09-17.jpg", place:"韩国雪岳山 · 初秋"},
+          {src:"assets/g09-18.jpg", place:"日本日光中禅寺湖 · 初秋"},
+          {src:"assets/c09-19.jpg", place:"日本日光 · 东照宫秋色"},
+          {src:"assets/g09-20.jpg", place:"瑞士恩加丁 · 金色落叶松"},
+          {src:"assets/c09-21.jpg", place:"奥地利因斯布鲁克 · 因河彩色老城"},
+          {src:"assets/g09-22.jpg", place:"奥地利瓦豪河谷 · 秋日葡萄园"},
+          {src:"assets/c09-23.jpg", place:"斯洛文尼亚皮兰 · 海滨古城"},
+          {src:"assets/g09-24.jpg", place:"苏格兰高地 · 秋色"},
+          {src:"assets/g09-25.jpg", place:"英国湖区 · 秋"},
+          {src:"assets/c09-26.jpg", place:"冰岛迪霍拉里 · 海角灯塔"},
+          {src:"assets/g09-27.jpg", place:"巴塔哥尼亚 · 秋色林"},
+          {src:"assets/g09-28.jpg", place:"新西兰箭镇 · 金秋"},
+          {src:"assets/c09-29.jpg", place:"澳大利亚里士满 · 历史古桥小镇"},
+          {src:"assets/g09-30.jpg", place:"美国锡安公园 · 秋峡谷"}
+        ],
+        [ /* 10月 */
+          {src:"assets/m10.jpg", place:"美国佛蒙特 · 秋色"},
+          {src:"assets/d-larch.jpg", place:"阿尔泰 · 金色山谷"},
+          {src:"assets/g10-03.jpg", place:"日本京都岚山 · 秋"},
+          {src:"assets/g10-04.jpg", place:"日本奈良 · 秋枫"},
+          {src:"assets/c10-05.jpg", place:"日本金泽 · 兼六园秋夜"},
+          {src:"assets/g10-06.jpg", place:"日本青森奥入濑溪流 · 秋"},
+          {src:"assets/c10-07.jpg", place:"韩国全州 · 韩屋村秋色"},
+          {src:"assets/g10-08.jpg", place:"中国北京香山 · 红叶"},
+          {src:"assets/g10-09.jpg", place:"中国慕田峪长城 · 秋色"},
+          {src:"assets/g10-10.jpg", place:"中国南京栖霞山 · 枫叶"},
+          {src:"assets/c10-11.jpg", place:"中国 · 江南园林秋色"},
+          {src:"assets/c10-12.jpg", place:"中国杭州 · 灵隐寺秋色"},
+          {src:"assets/c10-13.jpg", place:"中国都江堰 · 秋日古堰"},
+          {src:"assets/g10-14.jpg", place:"中国青城山 · 秋日银杏"},
+          {src:"assets/g10-15.jpg", place:"中国德夯苗寨 · 秋"},
+          {src:"assets/g10-16.jpg", place:"中国凤凰古城 · 秋夜"},
+          {src:"assets/c10-17.jpg", place:"中国贵州肇兴 · 侗寨鼓楼秋色"},
+          {src:"assets/g10-18.jpg", place:"中国新疆塔里木 · 胡杨林"},
+          {src:"assets/g10-19.jpg", place:"中国额济纳 · 胡杨金秋"},
+          {src:"assets/c10-20.jpg", place:"中国宁夏 · 西夏王陵"},
+          {src:"assets/g10-21.jpg", place:"中国新疆白哈巴村 · 秋"},
+          {src:"assets/c10-22.jpg", place:"中国太原 · 晋祠秋色"},
+          {src:"assets/g10-23.jpg", place:"中国本溪关门山 · 枫叶谷"},
+          {src:"assets/g10-24.jpg", place:"加拿大沃特顿湖 · 秋"},
+          {src:"assets/c10-25.jpg", place:"美国特柳赖德 · 秋色山镇主街"},
+          {src:"assets/c10-26.jpg", place:"美国帕克城 · 秋日山镇"},
+          {src:"assets/g10-27.jpg", place:"美国哥伦比亚河谷 · 秋瀑"},
+          {src:"assets/g10-28.jpg", place:"美国蓝岭公路 · 秋日落"},
+          {src:"assets/g10-29.jpg", place:"奥地利哈尔施塔特 · 秋"},
+          {src:"assets/c10-30.jpg", place:"意大利科尔蒂纳 · 秋日小镇教堂"}
+        ],
+        [ /* 11月 */
+          {src:"assets/m11.jpg", place:"日本京都 · 东福寺红枫"},
+          {src:"assets/d-jiuzhaigou.jpg", place:"中国九寨沟 · 秋湖"},
+          {src:"assets/g11-03.jpg", place:"日本京都永观堂 · 红枫"},
+          {src:"assets/g11-04.jpg", place:"日本东京六义园 · 红叶夜"},
+          {src:"assets/c11-05.jpg", place:"日本京都 · 清水寺红枫"},
+          {src:"assets/g11-06.jpg", place:"日本镰仓 · 秋寺红枫"},
+          {src:"assets/g11-07.jpg", place:"韩国内藏山 · 红枫"},
+          {src:"assets/g11-08.jpg", place:"韩国首尔昌德宫 · 秋苑"},
+          {src:"assets/g11-09.jpg", place:"中国北京颐和园 · 秋"},
+          {src:"assets/g11-10.jpg", place:"中国北京钓鱼台 · 银杏大道"},
+          {src:"assets/g11-11.jpg", place:"中国南京明孝陵 · 石象路秋色"},
+          {src:"assets/g11-12.jpg", place:"中国杭州 · 九溪秋溪红枫"},
+          {src:"assets/c11-13.jpg", place:"中国苏州 · 古典园林秋色"},
+          {src:"assets/c11-14.jpg", place:"中国北京 · 故宫角楼秋色"},
+          {src:"assets/g11-15.jpg", place:"中国婺源篁岭 · 晚秋柿红"},
+          {src:"assets/g11-16.jpg", place:"中国四川海螺沟 · 红叶冰川"},
+          {src:"assets/g11-17.jpg", place:"中国四姑娘山 · 双桥沟秋湖"},
+          {src:"assets/g11-18.jpg", place:"中国云南腾冲 · 银杏村"},
+          {src:"assets/g11-19.jpg", place:"中国贵州妥乐村 · 古银杏"},
+          {src:"assets/c11-20.jpg", place:"中国西安 · 古城墙秋色"},
+          {src:"assets/g11-21.jpg", place:"中国婺源石城 · 秋枫村落"},
+          {src:"assets/g11-22.jpg", place:"中国宏村 · 秋色"},
+          {src:"assets/g11-23.jpg", place:"中国喀什 · 秋日老城"},
+          {src:"assets/c11-24.jpg", place:"捷克布拉格 · 查理大桥秋色"},
+          {src:"assets/c11-25.jpg", place:"法国巴黎 · 塞纳河秋日铁塔"},
+          {src:"assets/g11-26.jpg", place:"中国老君山 · 秋日云海"},
+          {src:"assets/c11-27.jpg", place:"美国纽约 · 中央公园秋色拱桥"},
+          {src:"assets/g11-28.jpg", place:"中国四川 · 达古冰川秋色"},
+          {src:"assets/c11-29.jpg", place:"比利时布鲁日 · 运河古城秋色"},
+          {src:"assets/g11-30.jpg", place:"德国巴伐利亚 · 晚秋雾山"}
+        ],
+        [ /* 12月 */
+          {src:"assets/m12.jpg", place:"瑞士 · 雪山村庄冬夜"},
+          {src:"assets/g12-02.jpg", place:"奥地利哈尔施塔特 · 圣诞雪夜"},
+          {src:"assets/g12-03.jpg", place:"奥地利萨尔茨堡 · 冬雪古城"},
+          {src:"assets/g12-04.jpg", place:"捷克布拉格 · 雪夜查理大桥"},
+          {src:"assets/g12-05.jpg", place:"捷克克鲁姆洛夫 · 雪镇"},
+          {src:"assets/g12-06.jpg", place:"匈牙利布达佩斯 · 冬雪多瑙河"},
+          {src:"assets/g12-07.jpg", place:"爱沙尼亚塔林 · 雪夜古城"},
+          {src:"assets/g12-08.jpg", place:"拉脱维亚里加 · 冬雪"},
+          {src:"assets/g12-09.jpg", place:"波兰克拉科夫 · 雪夜广场"},
+          {src:"assets/g12-10.jpg", place:"德国罗滕堡 · 圣诞雪镇"},
+          {src:"assets/g12-11.jpg", place:"法国科尔马 · 冬日小镇"},
+          {src:"assets/g12-12.jpg", place:"法国斯特拉斯堡 · 圣诞集市"},
+          {src:"assets/g12-13.jpg", place:"比利时布鲁日 · 雪夜运河"},
+          {src:"assets/g12-14.jpg", place:"荷兰阿姆斯特丹 · 冬日运河"},
+          {src:"assets/g12-15.jpg", place:"丹麦哥本哈根 · 新港雪景"},
+          {src:"assets/g12-16.jpg", place:"瑞典斯德哥尔摩 · 雪夜老城"},
+          {src:"assets/g12-17.jpg", place:"挪威奥斯陆 · 冬日峡湾"},
+          {src:"assets/g12-18.jpg", place:"芬兰赫尔辛基 · 雪港"},
+          {src:"assets/g12-19.jpg", place:"俄罗斯莫斯科 · 红场雪夜"},
+          {src:"assets/g12-20.jpg", place:"俄罗斯圣彼得堡 · 冬日运河"},
+          {src:"assets/g12-21.jpg", place:"中国长春净月潭 · 雪林"},
+          {src:"assets/g12-22.jpg", place:"中国北京故宫 · 雪"},
+          {src:"assets/g12-23.jpg", place:"中国西安古城墙 · 雪"},
+          {src:"assets/g12-24.jpg", place:"中国杭州西湖 · 断桥残雪"},
+          {src:"assets/g12-25.jpg", place:"中国庐山 · 冬雪"},
+          {src:"assets/g12-26.jpg", place:"中国阿勒泰 · 将军山雪日"},
+          {src:"assets/g12-27.jpg", place:"日本函馆 · 雪夜夜景"},
+          {src:"assets/g12-28.jpg", place:"日本京都金阁寺 · 雪"},
+          {src:"assets/g12-29.jpg", place:"韩国首尔景福宫 · 雪"},
+          {src:"assets/g12-30.jpg", place:"美国纽约中央公园 · 雪"}
+        ]
+      ];
+      function dailyPhoto(date){
+        var batch=GALLERY[date.getMonth()];
+        var idx=(date.getDate()-1)%batch.length;
+        return batch[idx];
+      }
+      /* Photo-wall state (in-memory only): photoIdx is the position
+         inside the current month's batch of 30. It starts on today's
+         scheduled photo, advances by one every AUTO_PHOTO_MS (a full
+         lap takes 30 minutes), and is re-anchored to the new month's
+         scheduled photo when the month rolls over. The prev/next
+         buttons step it manually and restart the one-minute
+         countdown. */
+      var AUTO_PHOTO_MS=60000;
+      var photoMonthKey=new Date().getMonth();
+      var photoIdx=GALLERY[photoMonthKey].indexOf(dailyPhoto(new Date()));
+      var photoLastAdvance=Date.now();
+      function shownPhoto(date){
+        var batch=GALLERY[date.getMonth()];
+        return batch[(((photoIdx%batch.length)+batch.length)%batch.length)];
+      }
+
+      /* ---------- lunar via Intl ---------- */
+      var fmtNum = new Intl.DateTimeFormat("en-US-u-ca-chinese",{month:"numeric",day:"numeric",year:"numeric"});
+      var fmtMonthName = new Intl.DateTimeFormat("zh-CN-u-ca-chinese",{month:"long"});
+      var DAY_LABELS = ["","初一","初二","初三","初四","初五","初六","初七","初八","初九","初十","十一","十二","十三","十四","十五","十六","十七","十八","十九","二十","廿一","廿二","廿三","廿四","廿五","廿六","廿七","廿八","廿九","三十"];
+      var lunarCache = {};
+      function lunarOf(date){
+        var key = date.getFullYear()+"-"+(date.getMonth()+1)+"-"+date.getDate();
+        if(lunarCache[key]) return lunarCache[key];
+        var parts = fmtNum.formatToParts(date), m=0, d=0, y=0;
+        for(var i=0;i<parts.length;i++){
+          if(parts[i].type==="month") m=parseInt(parts[i].value,10);
+          else if(parts[i].type==="day") d=parseInt(parts[i].value,10);
+          else if(parts[i].type==="relatedYear"||parts[i].type==="year") y=parseInt(parts[i].value,10);
+        }
+        var monthName = fmtMonthName.format(date);
+        var info = {y:y, m:m, d:d, monthName:monthName, dayLabel:DAY_LABELS[d]||""};
+        lunarCache[key]=info;
+        return info;
+      }
+      var STEMS="甲乙丙丁戊己庚辛壬癸", BRANCHES="子丑寅卯辰巳午未申酉戌亥", ZODIAC="鼠牛虎兔龙蛇马羊猴鸡狗猪";
+      function ganzhi(year){
+        var s=STEMS.charAt(((year-4)%10+10)%10), b=BRANCHES.charAt(((year-4)%12+12)%12), z=ZODIAC.charAt(((year-4)%12+12)%12);
+        return s+b+"年 · "+z+"年";
+      }
+
+      /* ---------- solar terms (寿星公式, 21世纪) ---------- */
+      var TERMS = [
+        [0,5.4055,"小寒"],[0,20.12,"大寒"],[1,3.87,"立春"],[1,18.74,"雨水"],[2,5.63,"惊蛰"],[2,20.646,"春分"],
+        [3,4.81,"清明"],[3,20.1,"谷雨"],[4,5.52,"立夏"],[4,21.04,"小满"],[5,5.678,"芒种"],[5,21.37,"夏至"],
+        [6,7.108,"小暑"],[6,22.83,"大暑"],[7,7.5,"立秋"],[7,23.13,"处暑"],[8,7.646,"白露"],[8,23.042,"秋分"],
+        [9,8.318,"寒露"],[9,23.438,"霜降"],[10,7.438,"立冬"],[10,22.36,"小雪"],[11,7.18,"大雪"],[11,21.94,"冬至"]
+      ];
+      var termCache={};
+      function termOf(year,month,day){
+        var key=year+"-"+month;
+        if(!termCache[key]){
+          var map={};
+          var yy=year%100;
+          for(var i=0;i<TERMS.length;i++){
+            if(TERMS[i][0]===month){
+              var d=Math.floor(yy*0.2422+TERMS[i][1])-Math.floor((yy-1)/4);
+              map[d]=TERMS[i][2];
+            }
+          }
+          termCache[key]=map;
+        }
+        return termCache[key][day]||null;
+      }
+
+      /* ---------- US holidays ---------- */
+      function nthWeekday(year,month,weekday,n){
+        var d=new Date(year,month,1), add=(weekday-d.getDay()+7)%7;
+        return 1+add+(n-1)*7;
+      }
+      function lastWeekday(year,month,weekday){
+        var d=new Date(year,month+1,0), sub=(d.getDay()-weekday+7)%7;
+        return d.getDate()-sub;
+      }
+      function easterSunday(year){
+        var a=year%19,b=Math.floor(year/100),c=year%100,d=Math.floor(b/4),e=b%4,
+            f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,
+            i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),
+            mo=Math.floor((h+l-7*m+114)/31), da=((h+l-7*m+114)%31)+1;
+        return {month:mo-1, day:da};
+      }
+      var usCache={};
+      function usHolidays(year){
+        if(usCache[year]) return usCache[year];
+        var map={};
+        function put(month,day,name){ map[(month+1)+"-"+day]=name; }
+        put(0,1,"New Year's Day");
+        put(0,nthWeekday(year,0,1,3),"MLK Day");
+        put(1,14,"Valentine's Day");
+        put(1,nthWeekday(year,1,1,3),"Presidents' Day");
+        var es=easterSunday(year); put(es.month,es.day,"Easter");
+        put(4,nthWeekday(year,4,0,2),"Mother's Day");
+        put(4,lastWeekday(year,4,1),"Memorial Day");
+        put(5,nthWeekday(year,5,0,3),"Father's Day");
+        put(5,19,"Juneteenth");
+        put(6,4,"Independence Day");
+        put(8,nthWeekday(year,8,1,1),"Labor Day");
+        put(9,nthWeekday(year,9,1,2),"Columbus Day");
+        put(9,31,"Halloween");
+        put(10,11,"Veterans Day");
+        put(10,nthWeekday(year,10,4,4),"Thanksgiving");
+        put(11,24,"Christmas Eve");
+        put(11,25,"Christmas");
+        put(11,31,"New Year's Eve");
+        usCache[year]=map;
+        return map;
+      }
+
+      /* ---------- Chinese holidays (solar-fixed) ---------- */
+      function cnFixed(year,month,day){
+        var k=(month+1)+"-"+day;
+        var fixed={"1-1":"元旦","3-8":"妇女节","5-1":"劳动节","5-4":"青年节","6-1":"儿童节","9-10":"教师节","10-1":"国庆节","10-2":"国庆假期","10-3":"国庆假期"};
+        if(k==="4-4"||k==="4-5"){ return termOf(year,month,day)==="清明" ? "清明节" : null; }
+        return fixed[k]||null;
+      }
+      var LUNAR_FEST = {"1-1":"春节","1-15":"元宵节","2-2":"龙抬头","5-5":"端午节","7-7":"七夕","7-15":"中元节","8-15":"中秋节","9-9":"重阳节","12-8":"腊八节","12-23":"小年"};
+      function dayInfo(date){
+        var y=date.getFullYear(), mo=date.getMonth(), da=date.getDate();
+        var lun=lunarOf(date);
+        var fest=null, festType=null;
+        var lf=LUNAR_FEST[lun.m+"-"+lun.d];
+        if(lf){ fest=lf; festType="cn"; }
+        if(lun.d>=29){
+          var next=new Date(y,mo,da+1), nl=lunarOf(next);
+          if(nl.m===1&&nl.d===1){ fest="除夕"; festType="cn"; }
+        }
+        if(!fest){
+          var cf=cnFixed(y,mo,da);
+          if(cf){ fest=cf; festType="cn"; }
+        }
+        var us=usHolidays(y)[(mo+1)+"-"+da]||null;
+        var term=termOf(y,mo,da);
+        return {lunar:lun, cnFest:fest, usFest:us, term:term};
+      }
+
+      /* ---------- state & render ---------- */
+      var now=new Date();
+      var viewY=now.getFullYear(), viewM=now.getMonth();
+      var followToday=true;
+      var todayKey=now.getFullYear()+"-"+now.getMonth()+"-"+now.getDate();
+
+      var mainGrid=document.getElementById("mainGrid"),
+          minisEl=document.getElementById("minis"),
+          photoImg=document.getElementById("photoImg"),
+          photoImgB=document.getElementById("photoImgB");
+      var photoFront=photoImg;
+      var photoDisplayedSrc=photoImg.getAttribute("src");
+      var photoLoadingSrc=null;
+      var photoFailAt=0;
+      var photoRetryTimer=null;
+      var photoToken=0;
+
+      function cellHTML(date, inMonth){
+        var info=dayInfo(date);
+        var dow=date.getDay();
+        var cls="cell"+(inMonth?"":" dim")+(dow===0?" sun":dow===6?" sat":"");
+        var isToday=(date.getFullYear()+"-"+date.getMonth()+"-"+date.getDate())===todayKey;
+        if(isToday&&inMonth) cls+=" today";
+        var festHTML="";
+        if(info.cnFest) festHTML='<div class="fest cn">'+info.cnFest+'</div>';
+        else if(info.usFest) festHTML='<div class="fest us">'+info.usFest+'</div>';
+        else if(info.term) festHTML='<div class="fest term">'+info.term+'</div>';
+        var lunLabel = info.lunar.d===1 ? info.lunar.monthName : info.lunar.dayLabel;
+        return '<div class="'+cls+'"><span class="num">'+date.getDate()+'</span><span class="lun">'+lunLabel+'</span>'+festHTML+'</div>';
+      }
+      function renderMain(){
+        document.getElementById("headScript").textContent=MONTH_EN[viewM];
+        document.getElementById("headYear").textContent=viewY;
+        document.getElementById("headCn").textContent=MONTH_CN[viewM];
+        var first=new Date(viewY,viewM,1);
+        var lead=(first.getDay()+6)%7;
+        var start=new Date(viewY,viewM,1-lead);
+        var daysIn=new Date(viewY,viewM+1,0).getDate();
+        var rows=Math.ceil((lead+daysIn)/7);
+        mainGrid.style.gridTemplateRows="repeat("+rows+", minmax(0, 1fr))";
+        mainGrid.classList.toggle("rows-6", rows===6);
+        var html="";
+        for(var i=0;i<rows*7;i++){
+          var d=new Date(start.getFullYear(),start.getMonth(),start.getDate()+i);
+          html+=cellHTML(d, d.getMonth()===viewM);
+        }
+        mainGrid.innerHTML=html;
+        fitFestNames();
+      }
+      function renderPhoto(force){
+        var ph=shownPhoto(new Date());
+        document.getElementById("photoPlace").textContent=ph.place;
+        if(photoDisplayedSrc===ph.src) return;
+        if(photoLoadingSrc===ph.src) return;
+        if(!force && photoFailAt && (Date.now()-photoFailAt<10000)) return;
+        photoLoadingSrc=ph.src;
+        var token=++photoToken;
+        var pre=new Image();
+        pre.onload=function(){
+          if(token!==photoToken) return;
+          photoLoadingSrc=null;
+          photoFailAt=0;
+          var incoming=(photoFront===photoImg)?photoImgB:photoImg;
+          var outgoing=photoFront;
+          incoming.src=ph.src;
+          incoming.alt=ph.place+"风景照片";
+          void incoming.offsetWidth;
+          incoming.classList.add("show");
+          outgoing.classList.remove("show");
+          photoFront=incoming;
+          photoDisplayedSrc=ph.src;
+        };
+        pre.onerror=function(){
+          if(token!==photoToken) return;
+          photoLoadingSrc=null;
+          photoFailAt=Date.now();
+          /* A failed load is NOT recorded as shown: the per-second
+             check in tickClock and this retry keep trying until the
+             new day's photo actually appears (e.g. the device woke
+             at midnight before its network came back). */
+          if(photoRetryTimer) clearTimeout(photoRetryTimer);
+          photoRetryTimer=setTimeout(function(){ photoRetryTimer=null; renderPhoto(true); },10000);
+        };
+        pre.src=ph.src;
+      }
+      /* Warm the cache with the whole current-month batch (plus
+         tomorrow's pick) while the page sits idle, so the swaps
+         are cache hits and do not depend on the network being up
+         at the moment the device wakes. */
+      function warmPhotoCache(){
+        var t=new Date();
+        var group=GALLERY[t.getMonth()];
+        for(var i=0;i<group.length;i++){ var im=new Image(); im.src=group[i].src; }
+        var tm=new Date(t.getFullYear(),t.getMonth(),t.getDate()+1);
+        var nx=new Image(); nx.src=dailyPhoto(tm).src;
+      }
+      function fitFestNames(){
+        var nodes=mainGrid.querySelectorAll(".fest.us");
+        for(var i=0;i<nodes.length;i++){
+          var el=nodes[i];
+          el.style.fontSize="";
+          var size=parseFloat(window.getComputedStyle(el).fontSize);
+          var guard=0;
+          while(el.scrollWidth>el.clientWidth+1 && size>8 && guard<32){
+            size-=0.5;
+            el.style.fontSize=size+"px";
+            guard++;
+          }
+        }
+      }
+      function renderMinis(){
+        document.getElementById("yearTitle").textContent=viewY+" 年历";
+        document.getElementById("yearEn").textContent=viewY+" · Year at a Glance";
+        var html="";
+        for(var m=0;m<12;m++){
+          var first=new Date(viewY,m,1);
+          var days=new Date(viewY,m+1,0).getDate();
+          var lead=(first.getDay()+6)%7;
+          var rows=Math.ceil((lead+days)/7);
+          var body="";
+          for(var r=0;r<rows;r++){
+            body+="<tr>";
+            for(var c=0;c<7;c++){
+              var dn=r*7+c-lead+1;
+              if(dn<1||dn>days){ body+="<td></td>"; continue; }
+              var d=new Date(viewY,m,dn);
+              var info=dayInfo(d);
+              var isT=(d.getFullYear()+"-"+d.getMonth()+"-"+d.getDate())===todayKey;
+              var dot=info.cnFest?'<i class="dot cn"></i>':(info.usFest?'<i class="dot us"></i>':"");
+              body+='<td class="'+(c===6?"sun":"")+(isT?" today":"")+'"><span class="dt">'+dn+dot+'</span></td>';
+            }
+            body+="</tr>";
+          }
+          html+='<div class="mini" data-m="'+m+'" role="button" tabindex="0" aria-label="查看'+(m+1)+'月">'
+              +'<h3><span>'+(m+1)+'月 '+MONTH_CN[m]+'</span><span class="en">'+MONTH_EN[m].toUpperCase()+'</span></h3>'
+              +'<table><tr><th>M</th><th>T</th><th>W</th><th>T</th><th>F</th><th>S</th><th>S</th></tr>'+body+'</table></div>';
+        }
+        minisEl.innerHTML=html;
+        var nodes=minisEl.querySelectorAll(".mini");
+        for(var i=0;i<nodes.length;i++){
+          (function(el){
+            function go(){ viewM=parseInt(el.getAttribute("data-m"),10); followToday=false; renderMain(); markCurrentMini(); window.scrollTo({top:0,behavior:"smooth"}); }
+            el.addEventListener("click",go);
+            el.addEventListener("keydown",function(e){ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); go(); } });
+          })(nodes[i]);
+        }
+      }
+      function markCurrentMini(){
+        /* current month is intentionally not highlighted in the year strip */
+      }
+      function renderTodayPanel(){
+        var t=new Date();
+        var info=dayInfo(t);
+        document.getElementById("todayDow").textContent=(t.getMonth()+1)+"月 · "+DOW_CN[t.getDay()];
+        document.getElementById("todayNum").textContent=t.getDate();
+        document.getElementById("todayLunar").textContent="农历"+info.lunar.monthName+info.lunar.dayLabel+" · "+ganzhi(info.lunar.y);
+        var f=[];
+        if(info.cnFest) f.push(info.cnFest);
+        if(info.usFest) f.push(info.usFest);
+        if(info.term) f.push(info.term);
+        document.getElementById("todayFest").textContent=f.join(" · ");
+      }
+      var showSeconds=false;
+      var secToggle=document.getElementById("secToggle");
+      if(secToggle){
+        secToggle.addEventListener("click",function(){
+          showSeconds=!showSeconds;
+          secToggle.setAttribute("aria-pressed", showSeconds?"true":"false");
+          secToggle.textContent=showSeconds?"隐藏秒数":"显示秒数";
+          tickClock();
+        });
+      }
+      function tickClock(){
+        var t=new Date();
+        var hh=String(t.getHours()).padStart(2,"0"), mm=String(t.getMinutes()).padStart(2,"0"), ss=String(t.getSeconds()).padStart(2,"0");
+        document.getElementById("clock").textContent=showSeconds ? (hh+":"+mm+":"+ss) : (hh+":"+mm);
+        var key=t.getFullYear()+"-"+t.getMonth()+"-"+t.getDate();
+        if(key!==todayKey){
+          todayKey=key;
+          renderPhoto(true);
+          warmPhotoCache();
+          renderTodayPanel();
+          if(followToday){ viewY=t.getFullYear(); viewM=t.getMonth(); renderMain(); renderMinis(); }
+          else { renderMain(); renderMinis(); }
+        }
+        /* Month rollover: the whole batch swaps to the new month's
+           30 photos; re-anchor the wall and restart the countdown. */
+        var monthNow=t.getMonth();
+        if(monthNow!==photoMonthKey){
+          photoMonthKey=monthNow;
+          photoIdx=GALLERY[monthNow].indexOf(dailyPhoto(t));
+          photoLastAdvance=Date.now();
+          renderPhoto(true);
+          warmPhotoCache();
+        }
+        /* Photo wall: advance one photo every minute. Driven from
+           this per-second tick with a timestamp rather than a bare
+           timer, so a swap missed while the display slept still
+           happens as soon as the page wakes. */
+        if(Date.now()-photoLastAdvance>=AUTO_PHOTO_MS){
+          photoLastAdvance=Date.now();
+          photoIdx++;
+          renderPhoto(true);
+        }
+        /* Backstop, checked every second: if a midnight swap ever
+           failed or was missed while timers were suspended, keep
+           retrying until the photo on screen matches today's pick. */
+        renderPhoto();
+      }
+      function shiftMonth(delta){
+        viewM+=delta;
+        if(viewM<0){ viewM=11; viewY--; renderMinis(); }
+        if(viewM>11){ viewM=0; viewY++; renderMinis(); }
+        followToday=false;
+        renderMain(); markCurrentMini();
+      }
+      document.getElementById("photoPrev").addEventListener("click",function(){
+        photoIdx--;
+        photoLastAdvance=Date.now();
+        renderPhoto(true);
+      });
+      document.getElementById("photoNext").addEventListener("click",function(){
+        photoIdx++;
+        photoLastAdvance=Date.now();
+        renderPhoto(true);
+      });
+      document.getElementById("prevM").addEventListener("click",function(){ shiftMonth(-1); });
+      document.getElementById("nextM").addEventListener("click",function(){ shiftMonth(1); });
+      document.getElementById("goToday").addEventListener("click",function(){
+        var t=new Date(); viewY=t.getFullYear(); viewM=t.getMonth(); followToday=true;
+        renderMain(); renderMinis(); renderTodayPanel();
+      });
+      document.getElementById("prevY").addEventListener("click",function(){ viewY--; followToday=false; renderMain(); renderMinis(); });
+      document.getElementById("nextY").addEventListener("click",function(){ viewY++; followToday=false; renderMain(); renderMinis(); });
+      window.addEventListener("resize",function(){ fitFestNames(); });
+      /* Timers can be suspended while an always-on display sleeps;
+         re-check the date and photo as soon as the page wakes. */
+      document.addEventListener("visibilitychange",function(){ if(!document.hidden) tickClock(); });
+      window.addEventListener("focus",function(){ tickClock(); });
+      window.addEventListener("pageshow",function(){ tickClock(); });
+      if(document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ fitFestNames(); });
+      document.addEventListener("keydown",function(e){
+        if(e.key==="ArrowLeft") shiftMonth(-1);
+        else if(e.key==="ArrowRight") shiftMonth(1);
+      });
+
+      renderPhoto();
+      renderTodayPanel();
+      renderMain();
+      renderMinis();
+      tickClock();
+      setTimeout(warmPhotoCache,2500);
+      setInterval(tickClock,1000);
+    })();
+    </script>
+  </body>
+</html>
