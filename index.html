@@ -383,7 +383,7 @@
         color:var(--ink-soft);
       }
       .week-head span small{ display:block; font-size:.78em; letter-spacing:.3em; font-weight:500; color:var(--ink-faint); margin-top:1px; }
-      .grid{ flex:1; min-height:0; padding:23px 6px 4px; gap:2px; grid-template-rows:repeat(6,minmax(0,1fr)); }
+      .grid{ flex:1; min-height:0; padding:17px 6px 4px; gap:2px; grid-template-rows:repeat(6,minmax(0,1fr)); }
       .cell{
         border-radius:8px;
         padding:2px 3px 1px;
@@ -393,12 +393,10 @@
         min-height:0;
         min-width:0;
       }
-      /* First week only: nudge the whole first row (26–1) up a
-         touch, closer to the divider line above it. A transform
-         moves just these seven cells visually — the grid tracks,
-         the other rows, the calendar's overall size and the
-         dates' alignment and font size are all untouched. */
-      .grid .cell:nth-child(-n+7){ transform:translateY(-6px); }
+      /* The whole date grid sits 6px higher (see .grid padding-top
+         above): every row moves up together, so the first row sits
+         closer to the divider line while the spacing between all
+         six rows stays identical. */
       .cell .num{
         font-family:var(--font-num);
         font-weight:700;
