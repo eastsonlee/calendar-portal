@@ -78,7 +78,7 @@
       .top-controls{
         position:fixed;
         top:14px;
-        left:14px;
+        right:14px;
         z-index:100;
         display:flex;
         gap:8px;
@@ -172,7 +172,7 @@
       :root.pseudo-fs .sheet{ border:none; box-shadow:none; }
       :root.pseudo-fs body{ overflow:hidden; }
       @media (max-width:560px){
-        .top-controls{ top:10px; left:10px; }
+        .top-controls{ top:10px; right:10px; }
         .theme-toggle{ min-height:38px; padding:7px 12px; font-size:13px; }
         .fs-toggle{ width:38px; min-height:38px; }
       }
@@ -327,7 +327,12 @@
       .month-head{
         background:var(--band);
         color:#fdf6e9;
-        padding:4px 16px 3px;
+        /* Right padding reserves room for the fixed top-right
+           controls (fullscreen + theme, ~130px wide at the
+           viewport's top-right corner) so the ‹ / 今天 / › nav
+           sits fully left of them — visible and clickable —
+           instead of sliding underneath the button layer. */
+        padding:4px 148px 3px 16px;
         display:flex;
         align-items:center;
         gap:10px;
@@ -335,8 +340,8 @@
       .month-head .script{
         font-family:var(--font-num);
         font-weight:700;
-        font-size:clamp(28px,2.55vw,42px);
-        line-height:1;
+        font-size:clamp(30px,2.7vw,44px);
+        line-height:1.15;
         letter-spacing:.01em;
         padding-right:4px;
         white-space:nowrap;
@@ -344,15 +349,10 @@
       .month-head .y-num{
         font-family:var(--font-num);
         font-weight:700;
-        font-size:clamp(22px,1.9vw,32px);
-        letter-spacing:.06em;
+        font-size:clamp(30px,2.7vw,44px);
+        line-height:1.15;
+        letter-spacing:.03em;
         font-variant-numeric:tabular-nums;
-      }
-      .month-head .m-cn{
-        font-family:var(--font-num);
-        font-weight:900;
-        font-size:clamp(17px,1.4vw,23px);
-        margin-left:2px;
         white-space:nowrap;
       }
       .nav{ margin-left:auto; display:flex; gap:6px; align-items:center; flex:none; }
@@ -523,7 +523,7 @@
       }
       @media (max-width:560px){
         .minis{ grid-template-columns:repeat(2,1fr); gap:8px 10px; }
-        .month-head{ flex-wrap:wrap; }
+        .month-head{ flex-wrap:wrap; padding-right:16px; }
         .nav{ margin-left:0; }
         .cell{ padding:4px 5px 3px; }
         .photo .scrim{ padding:64px 12px 10px; gap:6px; flex-direction:column; align-items:flex-start; }
@@ -591,7 +591,6 @@
             <div class="month-head">
               <span class="script" id="headScript">November</span>
               <span class="y-num" id="headYear">2026</span>
-              <span class="m-cn" id="headCn">十一月</span>
               <div class="nav">
                 <button type="button" id="prevM" aria-label="上个月">‹</button>
                 <button type="button" class="today-btn" id="goToday">今天</button>
@@ -1470,7 +1469,6 @@
       function renderMain(){
         document.getElementById("headScript").textContent=MONTH_EN[viewM];
         document.getElementById("headYear").textContent=viewY;
-        document.getElementById("headCn").textContent=MONTH_CN[viewM];
         var first=new Date(viewY,viewM,1);
         var lead=(first.getDay()+6)%7;
         var start=new Date(viewY,viewM,1-lead);
