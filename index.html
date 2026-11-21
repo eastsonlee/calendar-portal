@@ -370,7 +370,7 @@
       .nav button.today-btn{ font-size:13.5px; font-weight:700; letter-spacing:.08em; }
       .week-head, .grid{ display:grid; grid-template-columns:repeat(7,1fr); }
       .week-head{
-        padding:2px 6px 1px;
+        padding:2px 6px 6px;
         column-gap:2px;
         border-bottom:1px solid var(--line);
       }
@@ -383,9 +383,7 @@
         color:var(--ink-soft);
       }
       .week-head span small{ display:block; font-size:.78em; letter-spacing:.3em; font-weight:500; color:var(--ink-faint); margin-top:1px; }
-      .week-head span:last-child{ color:var(--sun); }
-      .week-head span:nth-child(6){ color:var(--sat); }
-      .grid{ flex:1; min-height:0; padding:2px 6px 4px; gap:2px; grid-template-rows:repeat(6,minmax(0,1fr)); }
+      .grid{ flex:1; min-height:0; padding:7px 6px 4px; gap:2px; grid-template-rows:repeat(6,minmax(0,1fr)); }
       .cell{
         border-radius:8px;
         padding:2px 3px 1px;
@@ -405,7 +403,7 @@
         flex:none;
       }
       .cell .fest{
-        font-size:clamp(11px,.9vw,14.5px);
+        font-size:clamp(12.5px,1vw,15.5px);
         font-weight:700;
         line-height:1.12;
         margin-top:2px;
@@ -414,10 +412,25 @@
         max-width:100%;
         width:100%;
         text-align:center;
+        color:var(--cn);
       }
       .cell .fest.cn{ color:var(--cn); }
-      .cell .fest.us{ font-family:var(--font-num); font-weight:700; color:var(--us); white-space:nowrap; font-size:clamp(10px,.78vw,12.5px); letter-spacing:-.02em; }
+      .cell .fest.us{ font-family:var(--font-num); font-weight:700; color:var(--cn); white-space:nowrap; font-size:clamp(11.5px,.92vw,14px); letter-spacing:-.02em; }
       .cell .fest.term{ color:var(--term); font-weight:500; }
+      /* Holidays (CN + US): the date number itself is red — no
+         red or blue dot for holidays. Today's circle keeps its
+         own ink colour so the number stays readable on it. */
+      .cell.hol .num{ color:var(--cn); }
+      .cell.today.hol .num{ color:var(--today-ink); }
+      /* Solar terms: the only dot on the calendar — a small
+         green dot under the date. */
+      .cell .term-dot{
+        width:7px; height:7px; flex:none;
+        border-radius:50%;
+        background:var(--term);
+        margin-top:4px;
+        display:block;
+      }
       .cell .lun{
         font-size:clamp(11px,.86vw,13.5px);
         font-weight:600;
@@ -431,17 +444,25 @@
       .grid.rows-6 .cell{ padding-top:1px; padding-bottom:0; }
       .cell.dim{ opacity:.32; }
       :root[data-theme="dark"] .cell.dim{ opacity:.5; }
-      .cell.sun .num{ color:var(--sun); }
-      .cell.sat .num{ color:var(--sat); }
-      .cell.today{
-        background:var(--today-bg);
-        color:var(--today-ink);
-        box-shadow:inset 0 0 0 1.5px rgba(46,26,9,.22), 0 2px 10px rgba(0,0,0,.18);
+      /* Today: a background wash on today's cell only — the
+         colour is the cell's own background (the bottom layer),
+         and the date number, lunar line, festival text and the
+         solar-term dot all sit in a layer above it, so nothing
+         is covered. (The old circle hung on the number with a
+         stacking context above the non-positioned lunar line,
+         so its lower half painted over the lunar text.) A
+         background cannot change the cell's size, the number's
+         box, baseline or the row alignment. */
+      .cell.today{ background:var(--today-bg); }
+      .cell.today > *{
+        position:relative;
+        z-index:1;
       }
-      .cell.today .num, .cell.today.sun .num, .cell.today.sat .num{ color:var(--today-ink); }
-      .cell.today .lun{ color:var(--today-ink); opacity:.84; }
+      .cell.today .num{ color:var(--today-ink); }
+      .cell.today .lun{ color:var(--today-ink); opacity:.82; }
       .cell.today .fest{ color:var(--today-ink); }
-      .cell:not(.today):hover{ background:var(--hover); }
+      .cell:hover{ background:var(--hover); }
+      .cell.today:hover{ background:var(--today-bg); }
       /* ---------- year strip ---------- */
       .year-strip{
         border-top:1px solid var(--line);
@@ -465,11 +486,23 @@
       .year-head .y-title em{
         font-family:var(--font-num); font-style:normal; font-weight:700; color:var(--ink-soft); margin-left:6px; letter-spacing:.04em;
       }
-      .legend{ display:flex; gap:14px; flex-wrap:wrap; font-size:11px; font-weight:500; color:var(--ink-soft); margin-left:auto; align-items:center; }
-      .legend i{ display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:5px; vertical-align:1px; }
-      .legend .dot-cn{ background:var(--cn); }
-      .legend .dot-us{ background:var(--us); }
-      .legend .dot-term{ background:var(--term); }
+      /* Legend: two dots only — red = holiday, green = solar
+         term. The dots live in the legend only; on the calendars
+         themselves holidays are red dates (no dot) and solar
+         terms carry the green dot alone. */
+      .year-legend{
+        margin-left:auto;
+        display:inline-flex; align-items:center; gap:14px;
+        font-size:clamp(11px,.9vw,12.5px);
+        font-weight:700;
+        color:var(--ink-soft);
+        letter-spacing:.05em;
+        line-height:1;
+      }
+      .year-legend .lg-item{ display:inline-flex; align-items:center; gap:5px; }
+      .year-legend .lg-dot{ width:9px; height:9px; border-radius:50%; flex:none; display:block; }
+      .year-legend .lg-dot.red{ background:var(--cn); }
+      .year-legend .lg-dot.green{ background:var(--term); }
       .year-nav{ display:flex; gap:6px; }
       .year-nav button{
         min-width:34px; min-height:18px;
@@ -502,12 +535,25 @@
       .mini table{ width:100%; border-collapse:collapse; font-family:var(--font-num); font-size:clamp(11px,1.32vh,13px); line-height:1.74; font-weight:700; color:var(--ink); font-variant-numeric:tabular-nums; }
       .mini th{ font-weight:700; color:var(--ink-soft); font-size:.78em; padding:0 0 1px; line-height:1.2; }
       .mini td{ text-align:center; padding:0; position:relative; }
-      .mini td.sun{ color:var(--sun); }
+      /* Weekends keep the plain ink color; holidays (CN + US) are
+         the red dates. Today's circle overrides via its own color
+         on .dt, which beats the inherited holiday red. */
+      .mini td.hol{ color:var(--cn); }
       .mini td .dt{ position:relative; display:inline-block; min-width:18px; border-radius:50%; }
       .mini td.today .dt{ background:var(--today-bg); color:var(--today-ink); font-weight:700; }
-      .mini td i.dot{ position:absolute; left:50%; bottom:0; transform:translateX(-50%); width:4px; height:4px; border-radius:50%; }
-      .mini td i.dot.cn{ background:var(--cn); }
-      .mini td i.dot.us{ background:var(--us); }
+      /* Solar terms in the year strip: a small green dot under
+         the date — the only dot used, holidays are red dates. */
+      .mini td .term-dot{
+        position:absolute;
+        left:50%;
+        bottom:1px;
+        transform:translateX(-50%);
+        width:5px; height:5px;
+        border-radius:50%;
+        background:var(--term);
+        display:block;
+        pointer-events:none;
+      }
       /* ---------- responsive ---------- */
       @media (max-width:1100px){
         .minis{ grid-template-columns:repeat(3,1fr); grid-template-rows:none; flex:none; }
@@ -607,14 +653,10 @@
         <section class="year-strip" aria-label="全年日历">
           <div class="year-head">
             <span class="y-title"><span id="yearTitle">2026 年历</span><em id="yearEn">2026 · Year at a Glance</em></span>
+            <span class="year-legend" aria-label="图例：红点节日，绿点节气"><span class="lg-item"><span class="lg-dot red" aria-hidden="true"></span>节日</span><span class="lg-item"><span class="lg-dot green" aria-hidden="true"></span>节气</span></span>
             <div class="year-nav">
               <button type="button" id="prevY" aria-label="上一年">‹</button>
               <button type="button" id="nextY" aria-label="下一年">›</button>
-            </div>
-            <div class="legend">
-              <span><i class="dot-cn"></i>中国节日</span>
-              <span><i class="dot-us"></i>美国节日</span>
-              <span><i class="dot-term"></i>节气</span>
             </div>
           </div>
           <div class="minis" id="minis"></div>
@@ -1456,15 +1498,17 @@
       function cellHTML(date, inMonth){
         var info=dayInfo(date);
         var dow=date.getDay();
-        var cls="cell"+(inMonth?"":" dim")+(dow===0?" sun":dow===6?" sat":"");
+        var isHol=!!(info.cnFest||info.usFest);
+        var cls="cell"+(inMonth?"":" dim")+(dow===0?" sun":dow===6?" sat":"")+(isHol?" hol":"");
         var isToday=(date.getFullYear()+"-"+date.getMonth()+"-"+date.getDate())===todayKey;
         if(isToday&&inMonth) cls+=" today";
         var festHTML="";
         if(info.cnFest) festHTML='<div class="fest cn">'+info.cnFest+'</div>';
         else if(info.usFest) festHTML='<div class="fest us">'+info.usFest+'</div>';
         else if(info.term) festHTML='<div class="fest term">'+info.term+'</div>';
+        var dotHTML=info.term?'<span class="term-dot" aria-hidden="true"></span>':"";
         var lunLabel = info.lunar.d===1 ? info.lunar.monthName : info.lunar.dayLabel;
-        return '<div class="'+cls+'"><span class="num">'+date.getDate()+'</span><span class="lun">'+lunLabel+'</span>'+festHTML+'</div>';
+        return '<div class="'+cls+'"><span class="num">'+date.getDate()+'</span><span class="lun">'+lunLabel+'</span>'+festHTML+dotHTML+'</div>';
       }
       function renderMain(){
         document.getElementById("headScript").textContent=MONTH_EN[viewM];
@@ -1563,8 +1607,9 @@
               var d=new Date(viewY,m,dn);
               var info=dayInfo(d);
               var isT=(d.getFullYear()+"-"+d.getMonth()+"-"+d.getDate())===todayKey;
-              var dot=info.cnFest?'<i class="dot cn"></i>':(info.usFest?'<i class="dot us"></i>':"");
-              body+='<td class="'+(c===6?"sun":"")+(isT?" today":"")+'"><span class="dt">'+dn+dot+'</span></td>';
+              var hol=(info.cnFest||info.usFest)?" hol":"";
+              var termDot=info.term?'<span class="term-dot" aria-hidden="true"></span>':"";
+              body+='<td class="'+(isT?"today":"")+hol+'"><span class="dt">'+dn+'</span>'+termDot+'</td>';
             }
             body+="</tr>";
           }
